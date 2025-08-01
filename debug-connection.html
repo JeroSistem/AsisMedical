@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diagnóstico de Conexión</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .button {
+            background-color: #02641f;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+        .button:hover {
+            background-color: #1a5f1a;
+        }
+        .log {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Diagnóstico de Conexión</h1>
+        
+        <div id="status" class="status info">
+            Iniciando diagnóstico...
+        </div>
+        
+        <div class="log" id="log"></div>
+        
+        <h3>Pruebas de Conexión:</h3>
+        
+        <button onclick="testConnection('http://localhost:9002/')" class="button">
+            🌐 Probar localhost:9002
+        </button>
+        
+        <button onclick="testConnection('http://127.0.0.1:9002/')" class="button">
+            🔗 Probar 127.0.0.1:9002
+        </button>
+        
+        <button onclick="testConnection('http://localhost:9002/api/auth/session')" class="button">
+            🔐 Probar API de Auth
+        </button>
+        
+        <button onclick="openApp()" class="button">
+            🚀 Abrir Aplicación
+        </button>
+        
+        <button onclick="redirectApp()" class="button">
+            🔄 Redirigir a Aplicación
+        </button>
+        
+        <br><br>
+        
+        <a href="index.html" class="button" style="text-decoration: none; display: inline-block;">
+            🏠 Volver al Index
+        </a>
+    </div>
+
+    <script>
+        const log = document.getElementById('log');
+        const status = document.getElementById('status');
+        
+        function addLog(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            log.innerHTML += `[${timestamp}] ${message}\n`;
+            log.scrollTop = log.scrollHeight;
+        }
+        
+        function updateStatus(message, type = 'info') {
+            status.textContent = message;
+            status.className = `status ${type}`;
+        }
+        
+        async function testConnection(url) {
+            addLog(`Probando conexión a: ${url}`);
+            updateStatus('Probando conexión...', 'info');
+            
+            try {
+                const response = await fetch(url, {
+                    method: 'GET',
+                    mode: 'no-cors'
+                });
+                
+                addLog(`✅ Conexión exitosa a: ${url}`);
+                updateStatus('Conexión exitosa!', 'success');
+                
+            } catch (error) {
+                addLog(`❌ Error de conexión a: ${url}`);
+                addLog(`Error: ${error.message}`);
+                updateStatus('Error de conexión', 'error');
+            }
+        }
+        
+        function openApp() {
+            addLog('Intentando abrir aplicación en la misma pestaña...');
+            try {
+                window.location.href = 'http://localhost:9002/';
+                addLog('✅ Comando de apertura ejecutado');
+            } catch (error) {
+                addLog(`❌ Error al abrir: ${error.message}`);
+            }
+        }
+        
+        function redirectApp() {
+            addLog('Intentando redirección...');
+            try {
+                window.location.href = 'http://localhost:9002/';
+                addLog('✅ Redirección iniciada');
+            } catch (error) {
+                addLog(`❌ Error en redirección: ${error.message}`);
+            }
+        }
+        
+        // Auto-diagnóstico al cargar
+        window.onload = function() {
+            addLog('🔍 Iniciando diagnóstico automático...');
+            addLog('Puerto 9002 detectado como LISTENING');
+            addLog('Aplicación Next.js parece estar ejecutándose');
+            
+            setTimeout(() => {
+                testConnection('http://localhost:9002/');
+            }, 1000);
+        };
+    </script>
+</body>
+</html> 

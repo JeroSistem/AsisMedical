@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Simple</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 50px;
+            background-color: #f0f0f0;
+        }
+        .test-button {
+            background-color: #28a745;
+            color: white;
+            padding: 20px 40px;
+            border: none;
+            border-radius: 10px;
+            font-size: 20px;
+            cursor: pointer;
+            margin: 20px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .test-button:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test de Redirección Simple</h1>
+    <p>La aplicación Next.js está ejecutándose en el puerto 9002</p>
+    
+    <a href="http://localhost:9002/" class="test-button" target="_blank">
+        🚀 Ir a la Aplicación Next.js
+    </a>
+    
+    <br><br>
+    
+    <a href="index.html" class="test-button">
+        🔙 Volver al Index Principal
+    </a>
+    
+    <p><small>Si no funciona, verifica que la aplicación esté ejecutándose en http://localhost:9002</small></p>
+</body>
+</html> 

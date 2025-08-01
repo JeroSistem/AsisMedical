@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Redirección Simple</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 50px;
+            background-color: #f0f0f0;
+        }
+        .test-btn {
+            background-color: #02641f;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            cursor: pointer;
+            margin: 20px;
+        }
+        .test-btn:hover {
+            background-color: #1a5f1a;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test de Redirección Simple</h1>
+    
+    <p>Haz clic en el botón para abrir la aplicación Next.js:</p>
+    
+    <button onclick="window.location.href='http://localhost:9002/'" class="test-btn">
+        🚀 Abrir Aplicación Next.js
+    </button>
+    
+    <br><br>
+    
+    <button onclick="window.location.href='http://localhost:9002/'" class="test-btn">
+        🔄 Redirigir en la misma pestaña
+    </button>
+    
+    <br><br>
+    
+    <a href="http://localhost:9002/" target="_blank" class="test-btn" style="text-decoration: none; display: inline-block;">
+        🔗 Enlace directo
+    </a>
+    
+    <br><br>
+    
+    <a href="index.html" class="test-btn" style="text-decoration: none; display: inline-block;">
+        🏠 Volver al Index
+    </a>
+    
+    <script>
+        // Auto-redirect después de 2 segundos
+        setTimeout(function() {
+            console.log('Intentando redirección automática...');
+            window.location.href = 'http://localhost:9002/';
+        }, 2000);
+    </script>
+</body>
+</html> 

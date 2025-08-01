@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Redirección</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 50px;
+            background-color: #f0f0f0;
+        }
+        .debug-button {
+            background-color: #dc3545;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 5px;
+            font-size: 18px;
+            cursor: pointer;
+            margin: 10px;
+        }
+        .debug-button:hover {
+            background-color: #c82333;
+        }
+        .status {
+            margin: 20px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <h1>Debug de Redirección</h1>
+    
+    <div id="status" class="status">Verificando conexión...</div>
+    
+    <button class="debug-button" onclick="testConnection()">
+        Probar Conexión a Next.js
+    </button>
+    
+    <button class="debug-button" onclick="testRedirect()">
+        Probar Redirección
+    </button>
+    
+    <button class="debug-button" onclick="openInNewTab()">
+        Abrir en Nueva Pestaña
+    </button>
+    
+    <div id="results"></div>
+
+    <script>
+        function testConnection() {
+            const status = document.getElementById('status');
+            const results = document.getElementById('results');
+            
+            status.textContent = 'Probando conexión...';
+            status.className = 'status';
+            
+            // Probar diferentes URLs
+            const urls = [
+                'http://127.0.0.1:9002/',
+                'http://localhost:9002/',
+                'http://127.0.0.1:9002',
+                'http://localhost:9002'
+            ];
+            
+            let resultsHtml = '<h3>Resultados de Prueba:</h3>';
+            
+            urls.forEach(url => {
+                const link = document.createElement('a');
+                link.href = url;
+                link.target = '_blank';
+                link.textContent = `Probar: ${url}`;
+                link.style.display = 'block';
+                link.style.margin = '10px';
+                link.style.padding = '10px';
+                link.style.backgroundColor = '#007bff';
+                link.style.color = 'white';
+                link.style.textDecoration = 'none';
+                link.style.borderRadius = '5px';
+                
+                results.appendChild(link);
+            });
+            
+            status.textContent = 'Prueba completada. Haz clic en los enlaces de arriba.';
+            status.className = 'status success';
+        }
+        
+        function testRedirect() {
+            const status = document.getElementById('status');
+            status.textContent = 'Redirigiendo...';
+            status.className = 'status';
+            
+            setTimeout(() => {
+                window.location.href = 'http://127.0.0.1:9002/';
+            }, 1000);
+        }
+        
+        function openInNewTab() {
+            window.open('http://127.0.0.1:9002/', '_blank');
+        }
+        
+        // Verificar conexión al cargar la página
+        window.onload = function() {
+            const status = document.getElementById('status');
+            status.textContent = 'Página cargada. Haz clic en "Probar Conexión" para diagnosticar.';
+            status.className = 'status success';
+        };
+    </script>
+</body>
+</html> 
