@@ -1,4 +1,4 @@
-# Blueprint Render — ASIS Medical
+# Blueprint Render — ASIS Medical (mínimo / free tier)
 # https://render.com/docs/blueprint-spec
 
 databases:
@@ -15,17 +15,14 @@ services:
     region: oregon
     branch: main
     autoDeploy: true
-    buildCommand: npm ci && npx prisma generate && npm run build
-    # Si prisma db push falla, igual arranca Next (evita Not Found por proceso caido)
-    startCommand: sh -c "npx prisma db push --skip-generate || echo 'prisma push skipped'; npm run start"
+    buildCommand: npm install && npx prisma generate && npm run build
+    startCommand: npm run start
     healthCheckPath: /api/health
     envVars:
       - key: NODE_ENV
         value: production
       - key: NODE_VERSION
         value: "20.19.0"
-      - key: NODE_OPTIONS
-        value: --max-old-space-size=460
       - key: DATABASE_URL
         fromDatabase:
           name: asismedical-db
