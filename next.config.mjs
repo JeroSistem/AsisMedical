@@ -2,17 +2,20 @@
 const nextConfig = {
   images: {
     domains: ['localhost'],
+    unoptimized: true,
   },
-  // Indicador "N" de desarrollo: esquina opuesta (inferior derecha)
+  // Menos memoria en build (Render free ~512MB)
+  productionBrowserSourceMaps: false,
+  poweredByHeader: false,
+  compress: true,
+  // Indicador "N" de desarrollo
   devIndicators: {
     position: 'bottom-right',
   },
   eslint: {
-    // El proyecto tiene deuda de lint; no bloquear el build/CI por ello.
     ignoreDuringBuilds: true,
   },
   typescript: {
-    // Evita fallos de CI por errores de tipos en archivos legacy.
     ignoreBuildErrors: true,
   },
   serverExternalPackages: [
@@ -25,8 +28,12 @@ const nextConfig = {
     'pino-pretty',
   ],
   experimental: {
+    cpus: 1,
+    webpackMemoryOptimizations: true,
     optimizePackageImports: [
       'lucide-react',
+      'recharts',
+      'framer-motion',
       '@radix-ui/react-accordion',
       '@radix-ui/react-dialog',
       '@radix-ui/react-dropdown-menu',
@@ -40,7 +47,17 @@ const nextConfig = {
     NEXT_PUBLIC_AVAILABLE_LOCALES: process.env.NEXT_PUBLIC_AVAILABLE_LOCALES || 'es',
     NEXT_PUBLIC_FORCE_SPANISH: process.env.NEXT_PUBLIC_FORCE_SPANISH || 'true',
   },
-  webpack: (config, { isServer }) => {
+  webpack: (config, { isServer, dev }) => {
+    // Menos paralelismo = menos RAM en build
+    if (!dev) {
+      config.parallelism = 1;
+      config.optimization = {
+        ...config.optimization,
+        moduleIds: 'deterministic',
+        minimize: true,
+      };
+    }
+
     if (!isServer) {
       config.resolve.fallback = {
         ...config.resolve.fallback,
@@ -50,17 +67,10 @@ const nextConfig = {
         pg: false,
         bcryptjs: false,
         'rate-limiter-flexible': false,
+        fs: false,
+        net: false,
+        tls: false,
       };
-      config.externals = config.externals || [];
-      if (Array.isArray(config.externals)) {
-        config.externals.push({
-          '@opentelemetry/api': 'commonjs @opentelemetry/api',
-          '@prisma/client': 'commonjs @prisma/client',
-          '@prisma/adapter-pg': 'commonjs @prisma/adapter-pg',
-          pg: 'commonjs pg',
-          'rate-limiter-flexible': 'commonjs rate-limiter-flexible',
-        });
-      }
       config.resolve.alias = {
         ...config.resolve.alias,
         '@/lib/prisma': false,

@@ -1,5 +1,5 @@
-# Blueprint Render — ASIS Medical (mínimo / free tier)
-# https://render.com/docs/blueprint-spec
+# Blueprint Render — ASIS Medical (optimizado free tier)
+# Fallo anterior: JavaScript heap OOM en `next build` (exit 134)
 
 databases:
   - name: asismedical-db
@@ -15,7 +15,7 @@ services:
     region: oregon
     branch: main
     autoDeploy: true
-    buildCommand: npm install && npx prisma generate && npm run build
+    buildCommand: npm install --no-audit --no-fund && npx prisma generate && npx next build --turbopack
     startCommand: npm run start
     healthCheckPath: /api/health
     envVars:
@@ -23,6 +23,11 @@ services:
         value: production
       - key: NODE_VERSION
         value: "20.19.0"
+      # Heap justo debajo del límite free (~512MB) para evitar OOM de V8
+      - key: NODE_OPTIONS
+        value: --max-old-space-size=384
+      - key: NEXT_TELEMETRY_DISABLED
+        value: "1"
       - key: DATABASE_URL
         fromDatabase:
           name: asismedical-db
