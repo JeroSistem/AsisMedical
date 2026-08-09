@@ -1,5 +1,11 @@
-# Blueprint Render — ASIS Medical (optimizado free tier)
-# Fallo anterior: JavaScript heap OOM en `next build` (exit 134)
+# Blueprint Render — la web NO hace `next build` (OOM en plan free).
+# La imagen se construye en GitHub Actions → ghcr.io/jerosistem/asismedical:latest
+#
+# Tras el primer push de imagen:
+# 1. GitHub → Packages → asismedical → Package settings → Change visibility → Public
+#    (o configura credenciales de registro privados en Render)
+# 2. Render Blueprint → Manual Sync / Update
+# 3. (Opcional) Create Deploy Hook y secret RENDER_DEPLOY_HOOK en el repo
 
 databases:
   - name: asismedical-db
@@ -10,23 +16,18 @@ databases:
 services:
   - type: web
     name: asismedical-web
-    runtime: node
+    runtime: image
     plan: free
     region: oregon
-    branch: main
-    autoDeploy: true
-    # compile = menos RAM; generate-env inyecta NEXT_PUBLIC_* sin regenerar todas las páginas
-    buildCommand: npm install --no-audit --no-fund && npx prisma generate && npx next build --experimental-build-mode compile && npx next build --experimental-build-mode generate-env
-    startCommand: npm run start
+    image:
+      url: ghcr.io/jerosistem/asismedical:latest
     healthCheckPath: /api/health
     envVars:
       - key: NODE_ENV
         value: production
-      - key: NODE_VERSION
-        value: "20.19.0"
-      # Heap justo debajo del límite free (~512MB) para evitar OOM de V8
-      - key: NODE_OPTIONS
-        value: --max-old-space-size=384
+      # Render inyecta PORT; Next standalone debe escuchar 0.0.0.0
+      - key: HOSTNAME
+        value: "0.0.0.0"
       - key: NEXT_TELEMETRY_DISABLED
         value: "1"
       - key: DATABASE_URL

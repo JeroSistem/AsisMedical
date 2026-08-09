@@ -1,5 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Imagen Docker / Render: servidor autónomo (build en GitHub Actions)
+  output: 'standalone',
   images: {
     domains: ['localhost'],
     unoptimized: true,
