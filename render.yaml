@@ -15,7 +15,8 @@ services:
     region: oregon
     branch: main
     autoDeploy: true
-    buildCommand: npm install --no-audit --no-fund && npx prisma generate && npx next build --turbopack
+    # compile = menos RAM; generate-env inyecta NEXT_PUBLIC_* sin regenerar todas las páginas
+    buildCommand: npm install --no-audit --no-fund && npx prisma generate && npx next build --experimental-build-mode compile && npx next build --experimental-build-mode generate-env
     startCommand: npm run start
     healthCheckPath: /api/health
     envVars:
