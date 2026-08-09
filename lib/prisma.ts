@@ -34,6 +34,12 @@ function createPrismaClient() {
       }
       
       // Usar configuración individual para mejor manejo de contraseñas especiales
+      // Render Postgres exige SSL; al parsear la URL no se hereda sslmode solo.
+      const needsSsl =
+        process.env.NODE_ENV === 'production' ||
+        connectionString.includes('sslmode=require') ||
+        url.hostname.includes('render.com')
+
       const poolConfig = {
         host: url.hostname,
         port: parseInt(url.port) || 5432,
@@ -43,6 +49,7 @@ function createPrismaClient() {
         max: 20,
         idleTimeoutMillis: 30000,
         connectionTimeoutMillis: 10000, // Aumentar timeout
+        ssl: needsSsl ? { rejectUnauthorized: false } : undefined,
       }
 
       const pool =
