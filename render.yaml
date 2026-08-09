@@ -1,6 +1,5 @@
 # Blueprint Render — ASIS Medical
 # https://render.com/docs/blueprint-spec
-# https://render.com/articles/how-to-deploy-next-js-applications-with-ssr-and-api-routes
 
 databases:
   - name: asismedical-db
@@ -17,8 +16,8 @@ services:
     branch: main
     autoDeploy: true
     buildCommand: npm ci && npx prisma generate && npm run build
-    # next start usa process.env.PORT de Render; no forzar -p
-    startCommand: npx prisma db push --skip-generate && npm run start
+    # Si prisma db push falla, igual arranca Next (evita Not Found por proceso caido)
+    startCommand: sh -c "npx prisma db push --skip-generate || echo 'prisma push skipped'; npm run start"
     healthCheckPath: /api/health
     envVars:
       - key: NODE_ENV
@@ -34,7 +33,7 @@ services:
       - key: NEXTAUTH_SECRET
         generateValue: true
       - key: NEXTAUTH_URL
-        sync: false
+        value: https://asismedical-web.onrender.com
       - key: NEXT_PUBLIC_FORCE_SPANISH
         value: "true"
       - key: NEXT_PUBLIC_DEFAULT_LOCALE
