@@ -105,7 +105,7 @@ export default function TrasladosPage() {
           <CardContent>
             <div className="space-y-3">
               <Button variant="outline" className="w-full justify-start">
-                <Ambulance className="w-4 h-4 mr-2" />
+                <Truck className="w-4 h-4 mr-2" />
                 Programar Traslado
               </Button>
               <Button variant="outline" className="w-full justify-start">

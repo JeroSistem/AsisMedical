@@ -27,6 +27,9 @@ export const metadata: Metadata = {
   description: 'Gestión Avanzada de Historias Clínicas Electrónicas',
 };
 
+// Evita errores de prerender estático (useSearchParams, DB no disponible en CI, etc.)
+export const dynamic = 'force-dynamic';
+
 export default function RootLayout({
   children,
 }: Readonly<{
