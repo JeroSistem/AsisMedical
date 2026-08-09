@@ -8,9 +8,9 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Sparkles, LoaderCircle } from 'lucide-react';
+import { Sparkles, Loader2 } from 'lucide-react';
 import type { MedicalRecord } from '@/lib/types';
-import { summarizePatientRecordAction } from '@/actions/summarize';
+import { summarizePatientRecordAction } from '@/lib/actions/summarize';
 import { useToast } from '@/hooks/use-toast';
 
 export function AiSummary({ medicalRecord }: { medicalRecord: MedicalRecord }) {
@@ -52,7 +52,7 @@ export function AiSummary({ medicalRecord }: { medicalRecord: MedicalRecord }) {
             </div>
             <Button onClick={handleGenerateSummary} disabled={isPending}>
                 {isPending ? (
-                    <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
                     <Sparkles className="mr-2 h-4 w-4" />
                 )}
@@ -64,7 +64,7 @@ export function AiSummary({ medicalRecord }: { medicalRecord: MedicalRecord }) {
         <CardContent>
             {isPending && (
                 <div className="flex items-center gap-2 text-muted-foreground">
-                    <LoaderCircle className="h-4 w-4 animate-spin" />
+                    <Loader2 className="h-4 w-4 animate-spin" />
                     Generando resumen... por favor espere.
                 </div>
             )}
@@ -78,3 +78,5 @@ export function AiSummary({ medicalRecord }: { medicalRecord: MedicalRecord }) {
     </Card>
   );
 }
+
+export default AiSummary;

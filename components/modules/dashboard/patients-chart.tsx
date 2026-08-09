@@ -20,12 +20,12 @@ export function PatientsByGenderChart({ data }: PatientsByGenderProps) {
   }));
 
   return (
-    <Card className="col-span-4">
-      <CardHeader>
-        <CardTitle>Distribución por Género</CardTitle>
+    <Card className="h-full">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base sm:text-lg">Distribución por Género</CardTitle>
       </CardHeader>
       <CardContent className="pl-2">
-        <ResponsiveContainer width="100%" height={300}>
+        <ResponsiveContainer width="100%" height={250} className="sm:h-[300px]">
           <PieChart>
             <Pie
               data={chartData}
@@ -33,7 +33,8 @@ export function PatientsByGenderChart({ data }: PatientsByGenderProps) {
               cy="50%"
               labelLine={false}
               label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-              outerRadius={80}
+              outerRadius={60}
+              className="sm:outerRadius-80"
               fill="#8884d8"
               dataKey="value"
             >
@@ -41,8 +42,22 @@ export function PatientsByGenderChart({ data }: PatientsByGenderProps) {
                 <Cell key={`cell-${index}`} fill={entry.color} />
               ))}
             </Pie>
-            <Tooltip />
-            <Legend />
+            <Tooltip 
+              contentStyle={{
+                backgroundColor: 'hsl(var(--card))',
+                border: '1px solid hsl(var(--border))',
+                borderRadius: '0.5rem',
+                fontSize: '0.875rem'
+              }}
+            />
+            <Legend 
+              verticalAlign="bottom" 
+              height={36}
+              wrapperStyle={{
+                fontSize: '0.75rem',
+                paddingTop: '0.5rem'
+              }}
+            />
           </PieChart>
         </ResponsiveContainer>
       </CardContent>

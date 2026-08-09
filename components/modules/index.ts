@@ -12,6 +12,7 @@ export { default as PatientDetailClient } from './patients/patient-detail-client
 
 // Historias Clínicas
 export { default as AISummary } from './historias/ai-summary';
+export { PatientSelection } from './historias';
 
 // Administración
 export { default as UserList } from './admin/user-list';

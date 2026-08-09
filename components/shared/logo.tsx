@@ -6,7 +6,7 @@ export function Logo({ className }: { className?: string }) {
       <div className="bg-primary text-primary-foreground rounded-lg p-2">
         <Stethoscope className="h-5 w-5" />
       </div>
-      <span>ASIS medical Plus</span>
+      <span>AsisMediCare</span>
     </div>
   );
 }

@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { FileText, HeartPulse, FlaskConical, Upload } from 'lucide-react';
-import { AISummary } from '@/components/modules/historias';
+import { AISummary } from '@/components/modules';
 
 export function PatientDetailClient({
   patient,
@@ -33,13 +33,13 @@ export function PatientDetailClient({
       <Card>
         <CardHeader className="flex flex-row items-center gap-4 space-y-0">
           <Avatar className="h-20 w-20">
-            <AvatarImage src={patient.avatarUrl} alt={patient.name} data-ai-hint="person" />
-            <AvatarFallback>{patient.name.charAt(0)}</AvatarFallback>
+            <AvatarImage src={patient.avatarUrl} alt={patient.name || 'Paciente'} data-ai-hint="person" />
+            <AvatarFallback>{patient.name ? patient.name.charAt(0) : 'P'}</AvatarFallback>
           </Avatar>
           <div className="grid gap-1">
-            <CardTitle className="text-2xl">{patient.name}</CardTitle>
+            <CardTitle className="text-2xl">{patient.name || 'Nombre no disponible'}</CardTitle>
             <CardDescription>
-              {patient.gender}, Fecha de Nac: {patient.dateOfBirth}
+              {patient.gender}, Fecha de Nac: {patient.dateOfBirth instanceof Date ? patient.dateOfBirth.toLocaleDateString('es-CO') : patient.dateOfBirth}
             </CardDescription>
             <p className="text-sm text-muted-foreground">{patient.address}</p>
             <p className="text-sm text-muted-foreground">Contacto: {patient.contact}</p>

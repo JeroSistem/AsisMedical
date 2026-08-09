@@ -20,18 +20,36 @@ export function PatientsByMonthChart({ data }: PatientsByMonthProps) {
   }));
 
   return (
-    <Card className="col-span-4">
-      <CardHeader>
-        <CardTitle>Tendencia de Pacientes por Mes</CardTitle>
+    <Card className="h-full">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base sm:text-lg">Tendencia de Pacientes por Mes</CardTitle>
       </CardHeader>
       <CardContent className="pl-2">
-        <ResponsiveContainer width="100%" height={300}>
+        <ResponsiveContainer width="100%" height={250} className="sm:h-[300px]">
           <BarChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="month" />
-            <YAxis />
-            <Tooltip />
-            <Bar dataKey="pacientes" fill="#8884d8" />
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+            <XAxis 
+              dataKey="month" 
+              fontSize={12}
+              tick={{ fontSize: 11 }}
+            />
+            <YAxis 
+              fontSize={12}
+              tick={{ fontSize: 11 }}
+            />
+            <Tooltip 
+              contentStyle={{
+                backgroundColor: 'hsl(var(--card))',
+                border: '1px solid hsl(var(--border))',
+                borderRadius: '0.5rem',
+                fontSize: '0.875rem'
+              }}
+            />
+            <Bar 
+              dataKey="pacientes" 
+              fill="hsl(var(--primary))" 
+              radius={[4, 4, 0, 0]}
+            />
           </BarChart>
         </ResponsiveContainer>
       </CardContent>

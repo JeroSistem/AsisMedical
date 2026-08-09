@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from 'react';
-import { AppLayout } from '@/components/shared';
+import { ModulePageLayout, ModuleCard } from '@/components/shared/module-page-layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -84,26 +84,26 @@ export default function LaboratorioPage() {
   const pendingExams = mockExams.filter(e => e.status === 'pending').length;
   const urgentExams = mockExams.filter(e => e.priority === 'urgent').length;
 
+  const actions = (
+    <>
+      <Button variant="outline">
+        <FileText className="h-4 w-4 mr-2" />
+        Ver Reportes
+      </Button>
+      <Button>
+        <Plus className="h-4 w-4 mr-2" />
+        Nuevo Examen
+      </Button>
+    </>
+  );
+
   return (
-    <AppLayout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Laboratorio</h1>
-            <p className="text-gray-600 mt-1">Gestión de exámenes y resultados</p>
-          </div>
-          <div className="flex space-x-2">
-            <Button variant="outline" className="flex items-center gap-2">
-              <FileText className="h-4 w-4" />
-              Ver Reportes
-            </Button>
-            <Button className="flex items-center gap-2">
-              <Plus className="h-4 w-4" />
-              Nuevo Examen
-            </Button>
-          </div>
-        </div>
+    <ModulePageLayout
+      title="Laboratorio clínico"
+      description="Exámenes y resultados — ASIS Medical Head"
+      actions={actions}
+      maxWidth="7xl"
+    >
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -228,7 +228,6 @@ export default function LaboratorioPage() {
             </div>
           </CardContent>
         </Card>
-      </div>
-    </AppLayout>
+    </ModulePageLayout>
   );
 } 

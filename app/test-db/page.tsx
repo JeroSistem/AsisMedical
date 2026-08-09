@@ -7,14 +7,25 @@ export default async function TestDBPage() {
 
   return (
     <div className="p-8">
-      <h1 className="text-2xl font-bold mb-4">Prueba de Base de Datos PostgreSQL</h1>
+      <h1 className="text-2xl font-bold mb-4">Prueba de Conexión a Base de Datos</h1>
       
       <div className="space-y-4">
         <div className="p-4 border rounded">
           <h2 className="text-lg font-semibold mb-2">Estado de Conexión</h2>
-          <p className={isConnected ? "text-green-600" : "text-red-600"}>
-            {isConnected ? "✅ Conectado a PostgreSQL" : "❌ Error de conexión"}
+          <p className={isConnected ? "text-green-600 font-semibold" : "text-red-600 font-semibold"}>
+            {isConnected ? "✅ Conectado a PostgreSQL con Prisma" : "⚠️ Error de conexión a la base de datos"}
           </p>
+          {isConnected && (
+            <p className="mt-2 text-sm text-gray-600">
+              La aplicación está conectada correctamente a la base de datos PostgreSQL.
+              Los datos mostrados a continuación provienen de la base de datos.
+            </p>
+          )}
+          {!isConnected && (
+            <p className="mt-2 text-sm text-gray-600">
+              Verifica que PostgreSQL esté ejecutándose y que la variable DATABASE_URL en .env.local sea correcta.
+            </p>
+          )}
         </div>
 
         <div className="p-4 border rounded">
@@ -23,7 +34,7 @@ export default async function TestDBPage() {
             {patients.map(patient => (
               <div key={patient.id} className="p-2 bg-gray-50 rounded">
                 <p><strong>Nombre:</strong> {patient.name}</p>
-                <p><strong>Fecha de Nacimiento:</strong> {patient.dateOfBirth}</p>
+                <p><strong>Fecha de Nacimiento:</strong> {patient.dateOfBirth instanceof Date ? patient.dateOfBirth.toLocaleDateString() : patient.dateOfBirth}</p>
                 <p><strong>Género:</strong> {patient.gender}</p>
                 <p><strong>Contacto:</strong> {patient.contact}</p>
               </div>

@@ -1,11 +1,29 @@
 
-import type {Metadata} from 'next';
+import type { Metadata } from 'next';
+import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
-import { Toaster } from "@/components/ui/toaster"
-import { SessionProvider } from "@/components/shared"
+import '@/styles/theme.css';
+import { LanguageProvider } from '@/lib/contexts/language-context';
+import { ThemeProvider } from '@/lib/contexts/theme-context';
+import { ClientSessionProvider } from '@/components/providers/session-provider';
+import { ToasterProvider } from '@/components/shared/toaster-provider';
+import { AppShellProvider } from '@/components/shared/app-shell-context';
+import { PersistentAppShell } from '@/components/shared/app-layout';
+
+const geist = Geist({
+  subsets: ['latin'],
+  variable: '--font-geist',
+  display: 'swap',
+});
+
+const geistMono = Geist_Mono({
+  subsets: ['latin'],
+  variable: '--font-geist-mono',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
-  title: 'ASIS medical Plus',
+  title: 'AsisMediCare',
   description: 'Gestión Avanzada de Historias Clínicas Electrónicas',
 };
 
@@ -15,17 +33,25 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" suppressHydrationWarning>
+    <html lang="es" suppressHydrationWarning className={`${geist.variable} ${geistMono.variable}`}>
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap"
+          rel="stylesheet"
+        />
+        <meta name="theme-color" content="#0b1c30" />
       </head>
-      <body className="font-body antialiased bg-background">
-        <SessionProvider>
-          {children}
-          <Toaster />
-        </SessionProvider>
+      <body className="font-body antialiased bg-surface text-on-surface" suppressHydrationWarning>
+        <ClientSessionProvider>
+          <ThemeProvider>
+            <LanguageProvider>
+              <AppShellProvider>
+                <PersistentAppShell>{children}</PersistentAppShell>
+              </AppShellProvider>
+            </LanguageProvider>
+          </ThemeProvider>
+        </ClientSessionProvider>
+        <ToasterProvider />
       </body>
     </html>
   );

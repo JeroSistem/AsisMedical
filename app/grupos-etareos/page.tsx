@@ -3,7 +3,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Users, Baby, Child, User, UserCheck } from 'lucide-react';
+import { Users, Baby, User, UserCheck } from 'lucide-react';
 
 export default function GruposEtareosPage() {
   return (
@@ -47,7 +47,7 @@ export default function GruposEtareosPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Adolescentes (13-17)</CardTitle>
-            <Child className="h-4 w-4 text-green-600" />
+            <User className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">234</div>
@@ -79,8 +79,8 @@ export default function GruposEtareosPage() {
             <div className="space-y-4">
               {[
                 { name: 'Lactantes (0-2 años)', count: 123, icon: Baby, color: 'text-blue-600' },
-                { name: 'Preescolares (3-5 años)', count: 89, icon: Child, color: 'text-green-600' },
-                { name: 'Escolares (6-12 años)', count: 244, icon: Child, color: 'text-green-600' },
+                { name: 'Preescolares (3-5 años)', count: 89, icon: User, color: 'text-green-600' },
+                { name: 'Escolares (6-12 años)', count: 244, icon: User, color: 'text-green-600' },
                 { name: 'Adolescentes (13-17 años)', count: 234, icon: User, color: 'text-purple-600' },
                 { name: 'Adultos Jóvenes (18-35 años)', count: 567, icon: User, color: 'text-purple-600' },
                 { name: 'Adultos (36-65 años)', count: 445, icon: UserCheck, color: 'text-orange-600' },

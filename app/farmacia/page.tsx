@@ -74,13 +74,17 @@ export default function FarmaciaPage() {
   }).length;
 
   return (
-    <AppLayout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Farmacia</h1>
-            <p className="text-gray-600 mt-1">Gestión de medicamentos e inventario</p>
+    <AppLayout title="Farmacia" description="Inventario y despacho farmacéutico">
+      <div className="space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#39b8fd]/10">
+              <span className="material-symbols-outlined text-[#006591]">local_pharmacy</span>
+            </div>
+            <div>
+              <h1 className="font-geist text-headline-sm text-[#191c1e]">Central farmacéutica</h1>
+              <p className="text-body-sm text-[#45464d]">Gestión de medicamentos e inventario</p>
+            </div>
           </div>
           <div className="flex space-x-2">
             <Button variant="outline" className="flex items-center gap-2">

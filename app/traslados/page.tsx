@@ -3,7 +3,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Ambulance, MapPin, Clock, Users } from 'lucide-react';
+import { Truck, MapPin, Clock, Users } from 'lucide-react';
 
 export default function TrasladosPage() {
   return (
@@ -15,7 +15,7 @@ export default function TrasladosPage() {
           <p className="text-gray-600 mt-2">Gestión de traslados de pacientes</p>
         </div>
         <Button className="bg-orange-600 hover:bg-orange-700">
-          <Ambulance className="w-4 h-4 mr-2" />
+          <Truck className="w-4 h-4 mr-2" />
           Nuevo Traslado
         </Button>
       </div>
@@ -25,7 +25,7 @@ export default function TrasladosPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Traslados Hoy</CardTitle>
-            <Ambulance className="h-4 w-4 text-orange-600" />
+            <Truck className="h-4 w-4 text-orange-600" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">8</div>
@@ -80,7 +80,7 @@ export default function TrasladosPage() {
               {[1, 2, 3].map((item) => (
                 <div key={item} className="flex items-center justify-between p-3 border rounded-lg">
                   <div className="flex items-center space-x-3">
-                    <Ambulance className="h-5 w-5 text-orange-600" />
+                    <Truck className="h-5 w-5 text-orange-600" />
                     <div>
                       <p className="font-medium">Traslado #{2000 + item}</p>
                       <p className="text-sm text-gray-500">Paciente {item} - Urgencia</p>

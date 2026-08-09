@@ -1,75 +1,90 @@
-
-import { AppLayout } from '@/components/shared';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { getPatients, getDashboardStats } from '@/lib/data';
+import { getDashboardStats, testDatabaseConnection } from '@/lib/data';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import Link from 'next/link';
-import { ArrowRight, BedDouble, Calendar, FilePlus2, UserPlus, Users } from 'lucide-react';
-import { PatientList } from '@/components/modules/patients';
-import { DashboardStats, PatientsByGenderChart, PatientsByMonthChart, RecentPatients } from '@/components/modules/dashboard';
+  PatientsByGenderChart,
+  PatientsByMonthChart,
+  RecentPatients,
+} from '@/components/modules/dashboard';
+import { ModulePageLayout, ModuleCard } from '@/components/shared/module-page-layout';
+import { MetricCard } from '@/components/design-system';
+
+const emptyStats = {
+  totalPatients: 0,
+  totalUsers: 0,
+  totalMedicalRecords: 0,
+  patientsByGender: [] as Array<{ gender: string; count: number }>,
+  recentPatients: [] as Array<{ id: string; name: string; createdAt: string }>,
+  patientsByMonth: [] as Array<{ month: string; count: number }>,
+};
 
 export default async function DashboardPage() {
-  const patients = await getPatients();
-  const dashboardStats = await getDashboardStats();
-  const recentPatients = patients.slice(0, 5);
+  const dbOnline = await testDatabaseConnection();
+  const dashboardStats = dbOnline ? await getDashboardStats() : emptyStats;
 
   return (
-    <AppLayout>
-      <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
-        <div className="flex items-center justify-between space-y-2">
-          <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
+    <ModulePageLayout
+      title="Dashboard central"
+      description="Panel de control clínico — ASIS Medical Head"
+      maxWidth="7xl"
+    >
+      {!dbOnline && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-body-sm text-amber-900">
+          No hay conexión con PostgreSQL (<span className="font-mono">localhost:5433</span>). El
+          panel se muestra sin datos. Inicia el servicio de base de datos y recarga la página.
         </div>
+      )}
 
-        {/* Statistics Cards */}
-        <DashboardStats stats={dashboardStats} />
-
-        {/* Charts and Recent Data */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-          {/* Gráfico de distribución por género */}
-          <PatientsByGenderChart data={dashboardStats.patientsByGender} />
-          
-          {/* Gráfico de tendencia por mes */}
-          <PatientsByMonthChart data={dashboardStats.patientsByMonth} />
-          
-          {/* Pacientes recientes */}
-          <RecentPatients patients={dashboardStats.recentPatients} />
-          
-          {/* Acciones rápidas */}
-          <Card className="col-span-full lg:col-span-3">
-            <CardHeader>
-              <CardTitle>Acciones Rápidas</CardTitle>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 gap-4">
-              <Button size="lg" asChild>
-                <Link href="/historias/historia-clinica">
-                  <FilePlus2 className="mr-2 h-4 w-4" /> Nueva Historia Clínica
-                </Link>
-              </Button>
-              <Button size="lg" variant="secondary" asChild>
-                <Link href="/admin/usuarios/nuevo">
-                  <UserPlus className="mr-2 h-4 w-4" /> Registrar Nuevo Usuario
-                </Link>
-              </Button>
-              <Button size="lg" variant="secondary" asChild>
-                <Link href="/patients">
-                  <Users className="mr-2 h-4 w-4" /> Ver Todos los Pacientes
-                </Link>
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-
-
+      <div className="grid grid-cols-1 gap-gutter-md md:grid-cols-2 xl:grid-cols-4">
+        <MetricCard
+          label="Pacientes activos"
+          value={dashboardStats.totalPatients ?? 0}
+          icon="group"
+          trend="12%"
+          trendUp
+        />
+        <MetricCard
+          label="Historias clínicas"
+          value={dashboardStats.totalMedicalRecords ?? 0}
+          icon="clinical_notes"
+          meta="Registros"
+        />
+        <MetricCard
+          label="Usuarios del sistema"
+          value={dashboardStats.totalUsers ?? 0}
+          icon="manage_accounts"
+          meta="Activos"
+        />
+        <MetricCard
+          label="Camas disponibles"
+          value="42"
+          icon="bed"
+          meta="Capacidad: 450"
+        />
       </div>
-    </AppLayout>
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-7">
+        <div className="lg:col-span-2">
+          <ModuleCard title="Distribución por género">
+            <PatientsByGenderChart data={dashboardStats.patientsByGender} />
+          </ModuleCard>
+        </div>
+        <div className="lg:col-span-2">
+          <ModuleCard title="Tendencia mensual">
+            <PatientsByMonthChart data={dashboardStats.patientsByMonth} />
+          </ModuleCard>
+        </div>
+        <div className="lg:col-span-3">
+          <ModuleCard title="Pacientes recientes">
+            <RecentPatients patients={dashboardStats.recentPatients} />
+          </ModuleCard>
+        </div>
+      </div>
+
+      <div className="clinical-card p-4">
+        <h2 className="mb-1 font-geist text-title-lg text-[#191c1e]">Navegación</h2>
+        <p className="text-body-sm text-[#45464d]">
+          Usa el menú lateral para abrir cada módulo y sus formularios.
+        </p>
+      </div>
+    </ModulePageLayout>
   );
 }

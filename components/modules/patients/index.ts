@@ -1,2 +1,10 @@
 export { PatientList } from './patient-list';
-export { PatientDetailClient } from './patient-detail-client'; 
+export { PatientDetailClient } from './patient-detail-client';
+export { PatientViewModal } from './patient-view-modal';
+export { AdvancedSearchModal } from './advanced-search-modal';
+export { PatientFormWrapper } from './patient-form-wrapper';
+export { PatientFormStep1 } from './patient-form-step1';
+export { PatientFormStep2 } from './patient-form-step2';
+export { PatientFormStep3 } from './patient-form-step3';
+export { PatientFormStep4 } from './patient-form-step4';
+export { PatientFormSummary } from './patient-form-summary'; 

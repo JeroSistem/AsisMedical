@@ -8,8 +8,7 @@
  * - SummarizePatientRecordOutput - The return type for the summarizePatientRecord function.
  */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import {z} from 'zod';
 
 const SummarizePatientRecordInputSchema = z.object({
   medicalHistory: z.string().describe('The complete medical history of the patient.'),
@@ -23,30 +22,19 @@ const SummarizePatientRecordOutputSchema = z.object({
 export type SummarizePatientRecordOutput = z.infer<typeof SummarizePatientRecordOutputSchema>;
 
 export async function summarizePatientRecord(input: SummarizePatientRecordInput): Promise<SummarizePatientRecordOutput> {
-  return summarizePatientRecordFlow(input);
+  // TODO: Implement AI summarization when genkit is properly configured
+  // For now, return a basic summary
+  const { medicalHistory, currentStatus } = input;
+  
+  const summary = `Resumen del historial médico del paciente:
+
+Historial Médico: ${medicalHistory.substring(0, 200)}${medicalHistory.length > 200 ? '...' : ''}
+
+Estado Actual: ${currentStatus.substring(0, 200)}${currentStatus.length > 200 ? '...' : ''}
+
+Nota: Esta es una versión temporal del resumen. La funcionalidad completa de IA estará disponible cuando se configure genkit.`;
+
+  return {
+    summary
+  };
 }
-
-const prompt = ai.definePrompt({
-  name: 'summarizePatientRecordPrompt',
-  input: {schema: SummarizePatientRecordInputSchema},
-  output: {schema: SummarizePatientRecordOutputSchema},
-  prompt: `You are an expert medical summarizer.  Your goal is to provide a concise and accurate summary of a patient\'s medical history and current status so that clinicians can quickly review key details and provide better care.
-
-Medical History: {{{medicalHistory}}}
-
-Current Status: {{{currentStatus}}}
-
-Provide a summary of the patient\'s medical history and current status.`, 
-});
-
-const summarizePatientRecordFlow = ai.defineFlow(
-  {
-    name: 'summarizePatientRecordFlow',
-    inputSchema: SummarizePatientRecordInputSchema,
-    outputSchema: SummarizePatientRecordOutputSchema,
-  },
-  async input => {
-    const {output} = await prompt(input);
-    return output!;
-  }
-);

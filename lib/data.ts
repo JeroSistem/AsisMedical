@@ -1,123 +1,181 @@
-
-import { prisma } from './database';
 import type { Patient, MedicalRecord, User } from './types';
+import { prisma } from './prisma';
+
+function logDbUnavailable(context: string, error: unknown) {
+  const code = (error as any)?.code;
+  const message = (error as any)?.message || String(error);
+  // Evitar console.error con Error objects: en Next 15 dispara overlay rojo
+  if (code === 'ECONNREFUSED' || message.includes('ECONNREFUSED')) {
+    console.warn(
+      `[DB] ${context}: PostgreSQL no disponible (ECONNREFUSED). Revisa que el servicio esté en el puerto de DATABASE_URL.`
+    );
+    return;
+  }
+  console.warn(`[DB] ${context}:`, message);
+}
 
 // Funciones para Pacientes
 export async function getPatients(): Promise<Patient[]> {
   try {
-    const patients = await prisma.patient.findMany({
-      orderBy: { createdAt: 'desc' }
-    });
+    // Verificar que prisma esté inicializado correctamente
+    if (!prisma || typeof prisma.patient === 'undefined') {
+      console.warn('[DB] Prisma no está inicializado correctamente');
+      return [];
+    }
     
+    const patients = await prisma.patient.findMany({
+      orderBy: { createdAt: 'desc' },
+    });
+
     return patients.map(patient => ({
       id: patient.id,
-      name: patient.name,
-      dateOfBirth: patient.dateOfBirth.toISOString().split('T')[0],
+      name: `${patient.firstName} ${patient.lastName}`,
+      dateOfBirth: patient.dateOfBirth,
       gender: patient.gender,
-      contact: patient.contact || '',
+      contact: patient.mobilePhone || patient.landlinePhone || '',
       address: patient.address || '',
-      avatarUrl: patient.avatarUrl || 'https://placehold.co/100x100.png',
+      avatarUrl: patient.avatarUrl || undefined,
     }));
-  } catch (error) {
-    console.error('Error fetching patients:', error);
+  } catch (error: any) {
+    logDbUnavailable('getPatients', error);
     return [];
   }
 }
 
 export async function getPatientById(id: string): Promise<Patient | undefined> {
   try {
+    // Verificar que prisma esté inicializado correctamente
+    if (!prisma || typeof prisma.patient === 'undefined') {
+      console.error('Prisma no está inicializado correctamente');
+      return undefined;
+    }
+    
     const patient = await prisma.patient.findUnique({
-      where: { id }
+      where: { id },
     });
-    
+
     if (!patient) return undefined;
-    
+
     return {
       id: patient.id,
-      name: patient.name,
-      dateOfBirth: patient.dateOfBirth.toISOString().split('T')[0],
+      name: `${patient.firstName} ${patient.lastName}`,
+      dateOfBirth: patient.dateOfBirth,
       gender: patient.gender,
-      contact: patient.contact || '',
+      contact: patient.mobilePhone || patient.landlinePhone || '',
       address: patient.address || '',
-      avatarUrl: patient.avatarUrl || 'https://placehold.co/100x100.png',
+      avatarUrl: patient.avatarUrl || undefined,
     };
   } catch (error) {
-    console.error('Error fetching patient:', error);
+    logDbUnavailable('getPatientById', error);
     return undefined;
   }
 }
 
 export async function addPatient(patientData: Omit<Patient, 'id' | 'avatarUrl'>): Promise<Patient> {
   try {
-    const patient = await prisma.patient.create({
-      data: {
-        name: patientData.name,
-        dateOfBirth: new Date(patientData.dateOfBirth),
-        gender: patientData.gender,
-        contact: patientData.contact,
-        address: patientData.address,
-        avatarUrl: 'https://placehold.co/100x100.png',
-      }
-    });
+    // Verificar que prisma esté inicializado correctamente
+    if (!prisma || typeof prisma.patient === 'undefined') {
+      console.error('Prisma no está inicializado correctamente');
+      throw new Error('Base de datos no disponible');
+    }
     
+    // Calcular edad desde la fecha de nacimiento
+    const birthDate = typeof patientData.dateOfBirth === 'string' 
+      ? new Date(patientData.dateOfBirth) 
+      : patientData.dateOfBirth;
+    const today = new Date();
+    const age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    const calculatedAge = monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate()) 
+      ? age - 1 
+      : age;
+
+    // Extraer nombre y apellido del campo name
+    const nameParts = patientData.name.split(' ');
+    const firstName = nameParts[0] || '';
+    const lastName = nameParts.slice(1).join(' ') || '';
+
+    const newPatient = await prisma.patient.create({
+      data: {
+        firstName,
+        lastName,
+        dateOfBirth: birthDate,
+        age: calculatedAge,
+        gender: patientData.gender,
+        mobilePhone: patientData.contact,
+        address: patientData.address,
+        documentType: 'CC', // Valor por defecto
+        documentNumber: `TEMP-${Date.now()}`, // Temporal, debería venir del formulario
+      },
+    });
+
     return {
-      id: patient.id,
-      name: patient.name,
-      dateOfBirth: patient.dateOfBirth.toISOString().split('T')[0],
-      gender: patient.gender,
-      contact: patient.contact || '',
-      address: patient.address || '',
-      avatarUrl: patient.avatarUrl || 'https://placehold.co/100x100.png',
+      id: newPatient.id,
+      name: `${newPatient.firstName} ${newPatient.lastName}`,
+      dateOfBirth: newPatient.dateOfBirth,
+      gender: newPatient.gender,
+      contact: newPatient.mobilePhone || newPatient.landlinePhone || '',
+      address: newPatient.address || '',
+      avatarUrl: newPatient.avatarUrl || undefined,
     };
-  } catch (error) {
-    console.error('Error adding patient:', error);
-    throw error;
+  } catch (error: any) {
+    logDbUnavailable('addPatient', error);
+    throw new Error(`Error creando paciente: ${error?.message || 'Error desconocido'}`);
   }
 }
 
 // Funciones para Historias Clínicas
 export async function getMedicalRecordByPatientId(patientId: string): Promise<MedicalRecord | undefined> {
   try {
-    const medicalRecord = await prisma.medicalRecord.findFirst({
+    // Verificar que prisma esté inicializado correctamente
+    if (!prisma || typeof prisma.medicalRecord === 'undefined') {
+      console.error('Prisma no está inicializado correctamente');
+      return undefined;
+    }
+    
+    const record = await prisma.medicalRecord.findFirst({
       where: { patientId },
       include: {
         diagnoses: true,
         treatments: true,
         documents: true,
-      }
+      },
+      orderBy: { createdAt: 'desc' },
     });
-    
-    if (!medicalRecord) return undefined;
-    
+
+    if (!record) return undefined;
+
     return {
-      patientId: medicalRecord.patientId,
-      medicalHistory: medicalRecord.medicalHistory || '',
-      currentStatus: medicalRecord.currentStatus || '',
-      diagnoses: medicalRecord.diagnoses.map(d => ({
+      id: record.id,
+      patientId: record.patientId,
+      medicalHistory: record.medicalHistory || '',
+      currentStatus: record.currentStatus || '',
+      createdAt: record.createdAt,
+      updatedAt: record.updatedAt,
+      diagnoses: record.diagnoses.map(d => ({
         id: d.id,
-        date: d.date.toISOString().split('T')[0],
-        code: d.code,
+        name: d.code,
         description: d.description,
-        physician: d.physician,
+        date: d.date,
       })),
-      treatments: medicalRecord.treatments.map(t => ({
+      treatments: record.treatments.map(t => ({
         id: t.id,
-        date: t.date.toISOString().split('T')[0],
-        procedure: t.procedure,
-        medication: t.medication || '',
-        dosage: t.dosage || '',
-        physician: t.physician,
+        type: t.procedure,
+        description: t.procedure,
+        medication: t.medication || undefined,
+        dosage: t.dosage || undefined,
+        date: t.date,
       })),
-      documents: medicalRecord.documents.map(d => ({
-        id: d.id,
-        date: d.date.toISOString().split('T')[0],
-        type: d.type as 'Lab Result' | 'Imaging Report' | 'Consultation Note',
-        title: d.title,
-        url: d.url || '',
+      documents: record.documents.map(doc => ({
+        id: doc.id,
+        name: doc.title,
+        type: doc.type,
+        url: doc.url || '#',
+        date: doc.date,
       })),
     };
   } catch (error) {
-    console.error('Error fetching medical record:', error);
+    console.error('Error obteniendo historia clínica:', error);
     return undefined;
   }
 }
@@ -125,57 +183,74 @@ export async function getMedicalRecordByPatientId(patientId: string): Promise<Me
 // Funciones para Usuarios
 export async function getUsers(): Promise<User[]> {
   try {
-    const users = await prisma.user.findMany({
-      orderBy: { createdAt: 'desc' }
-    });
+    // Verificar que prisma esté inicializado correctamente
+    if (!prisma || typeof prisma.user === 'undefined') {
+      console.error('Prisma no está inicializado correctamente');
+      return [];
+    }
     
+    const users = await prisma.user.findMany({
+      orderBy: { createdAt: 'desc' },
+    });
+
     return users.map(user => ({
       id: user.id,
-      name: user.name,
+      name: user.name || '',
       email: user.email,
       role: user.role,
+      status: user.status,
       creationDate: user.createdAt.toISOString().split('T')[0],
-      status: user.status as 'Active' | 'Inactive',
     }));
   } catch (error) {
-    console.error('Error fetching users:', error);
+    logDbUnavailable('getUsers', error);
     return [];
   }
 }
 
 export async function addUser(userData: Omit<User, 'id' | 'creationDate'>): Promise<User> {
   try {
-    const user = await prisma.user.create({
+    // Verificar que prisma esté inicializado correctamente
+    if (!prisma || typeof prisma.user === 'undefined') {
+      console.error('Prisma no está inicializado correctamente');
+      throw new Error('Base de datos no disponible');
+    }
+    
+    const newUser = await prisma.user.create({
       data: {
         name: userData.name,
         email: userData.email,
-        role: userData.role,
+        role: userData.role as any,
         status: userData.status,
-      }
+      },
     });
-    
+
     return {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      creationDate: user.createdAt.toISOString().split('T')[0],
-      status: user.status as 'Active' | 'Inactive',
+      id: newUser.id,
+      name: newUser.name || '',
+      email: newUser.email,
+      role: newUser.role,
+      status: newUser.status,
+      creationDate: newUser.createdAt.toISOString().split('T')[0],
     };
-  } catch (error) {
-    console.error('Error adding user:', error);
-    throw error;
+  } catch (error: any) {
+    logDbUnavailable('addUser', error);
+    throw new Error(`Error creando usuario: ${error?.message || 'Error desconocido'}`);
   }
 }
 
 // Función para verificar conexión a la base de datos
 export async function testDatabaseConnection(): Promise<boolean> {
   try {
-    await prisma.$connect();
-    console.log('✅ Conexión a PostgreSQL exitosa');
+    // Verificar que prisma esté inicializado correctamente
+    if (!prisma || typeof prisma.$queryRaw === 'undefined') {
+      console.warn('[DB] Prisma no está inicializado correctamente');
+      return false;
+    }
+    
+    await prisma.$queryRaw`SELECT 1`;
     return true;
   } catch (error) {
-    console.error('❌ Error conectando a PostgreSQL:', error);
+    logDbUnavailable('testDatabaseConnection', error);
     return false;
   }
 }
@@ -183,78 +258,91 @@ export async function testDatabaseConnection(): Promise<boolean> {
 // Funciones para estadísticas del Dashboard
 export async function getDashboardStats() {
   try {
-    const [
-      totalPatients,
-      totalUsers,
-      totalMedicalRecords,
-      patientsByGender,
-      recentPatients,
-      patientsByMonth
-    ] = await Promise.all([
-      // Total de pacientes
-      prisma.patient.count(),
-      
-      // Total de usuarios
-      prisma.user.count(),
-      
-      // Total de historias clínicas
-      prisma.medicalRecord.count(),
-      
-      // Pacientes por género
-      prisma.patient.groupBy({
-        by: ['gender'],
-        _count: {
-          gender: true
-        }
-      }),
-      
-      // Pacientes recientes (últimos 7 días)
+    // Verificar que prisma esté inicializado correctamente
+    if (!prisma || typeof prisma.patient === 'undefined') {
+      console.error('Prisma no está inicializado correctamente');
+      return {
+        totalPatients: 0,
+        totalUsers: 0,
+        totalMedicalRecords: 0,
+        patientsByGender: [],
+        recentPatients: [],
+        patientsByMonth: [],
+      };
+    }
+    
+    const [totalPatients, totalUsers, totalMedicalRecords, patients] = await Promise.all([
+      prisma.patient.count().catch(() => 0),
+      prisma.user.count().catch(() => 0),
+      prisma.medicalRecord.count().catch(() => 0),
       prisma.patient.findMany({
-        where: {
-          createdAt: {
-            gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-          }
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          gender: true,
+          createdAt: true,
         },
         orderBy: { createdAt: 'desc' },
-        take: 5
-      }),
-      
-      // Pacientes por mes (últimos 6 meses)
-      prisma.$queryRaw`
-        SELECT 
-          DATE_TRUNC('month', "createdAt") as month,
-          COUNT(*) as count
-        FROM "Patient"
-        WHERE "createdAt" >= NOW() - INTERVAL '6 months'
-        GROUP BY DATE_TRUNC('month', "createdAt")
-        ORDER BY month DESC
-      `
+        take: 100, // Para calcular estadísticas
+      }).catch(() => []),
     ]);
+
+    const genderCounts = patients.reduce<Record<string, number>>((acc, patient) => {
+      acc[patient.gender] = (acc[patient.gender] ?? 0) + 1;
+      return acc;
+    }, {});
+
+    const patientsByGender = Object.entries(genderCounts).map(([gender, count]) => ({
+      gender,
+      count,
+    }));
+
+    const recentPatients = patients.slice(0, 5).map(patient => ({
+      id: patient.id,
+      name: `${patient.firstName} ${patient.lastName}`,
+      createdAt: patient.createdAt.toISOString().split('T')[0],
+    }));
+
+    // Obtener pacientes por mes
+    let patientsByMonth: Array<{ month: string; count: number }> = [];
+    try {
+      const patientsByMonthData = await prisma.$queryRaw<Array<{ month: Date; count: bigint }>>`
+        SELECT 
+          DATE_TRUNC('month', created_at) as month,
+          COUNT(*)::int as count
+        FROM patients
+        WHERE created_at >= NOW() - INTERVAL '12 months'
+        GROUP BY DATE_TRUNC('month', created_at)
+        ORDER BY month ASC
+      `;
+
+      patientsByMonth = patientsByMonthData.map(item => ({
+        month: item.month.toISOString().split('T')[0],
+        count: Number(item.count),
+      }));
+    } catch (error) {
+      logDbUnavailable('getPatientsByMonth', error);
+      patientsByMonth = [];
+    }
 
     return {
       totalPatients,
       totalUsers,
       totalMedicalRecords,
-      patientsByGender: patientsByGender.map(g => ({
-        gender: g.gender,
-        count: g._count.gender
-      })),
-      recentPatients: recentPatients.map(p => ({
-        id: p.id,
-        name: p.name,
-        createdAt: p.createdAt.toISOString().split('T')[0]
-      })),
-      patientsByMonth: patientsByMonth as Array<{ month: string; count: number }>
+      patientsByGender,
+      recentPatients,
+      patientsByMonth,
     };
   } catch (error) {
-    console.error('Error fetching dashboard stats:', error);
+    logDbUnavailable('getDashboardStats', error);
     return {
       totalPatients: 0,
       totalUsers: 0,
       totalMedicalRecords: 0,
       patientsByGender: [],
       recentPatients: [],
-      patientsByMonth: []
+      patientsByMonth: [],
     };
   }
 }
@@ -262,23 +350,37 @@ export async function getDashboardStats() {
 // Función para obtener estadísticas de diagnósticos
 export async function getDiagnosisStats() {
   try {
-    const diagnosisStats = await prisma.diagnosis.groupBy({
-      by: ['code'],
-      _count: {
-        code: true
-      },
-      _max: {
-        date: true
+    // Verificar que prisma esté inicializado correctamente
+    if (!prisma || typeof prisma.diagnosis === 'undefined') {
+      console.error('Prisma no está inicializado correctamente');
+      return [];
+    }
+    
+    const diagnoses = await prisma.diagnosis.findMany({
+      orderBy: { date: 'desc' },
+    });
+
+    const diagnosisMap = new Map<string, { count: number; lastOccurrence: Date }>();
+
+    diagnoses.forEach(diagnosis => {
+      const current = diagnosisMap.get(diagnosis.code);
+      if (!current) {
+        diagnosisMap.set(diagnosis.code, { count: 1, lastOccurrence: diagnosis.date });
+      } else {
+        current.count += 1;
+        if (diagnosis.date > current.lastOccurrence) {
+          current.lastOccurrence = diagnosis.date;
+        }
       }
     });
 
-    return diagnosisStats.map(d => ({
-      code: d.code,
-      count: d._count.code,
-      lastOccurrence: d._max.date?.toISOString().split('T')[0] || ''
+    return Array.from(diagnosisMap.entries()).map(([code, { count, lastOccurrence }]) => ({
+      code,
+      count,
+      lastOccurrence: lastOccurrence.toISOString().split('T')[0],
     }));
   } catch (error) {
-    console.error('Error fetching diagnosis stats:', error);
+    console.error('Error obteniendo estadísticas de diagnósticos:', error);
     return [];
   }
 }
@@ -286,19 +388,26 @@ export async function getDiagnosisStats() {
 // Función para obtener estadísticas de tratamientos
 export async function getTreatmentStats() {
   try {
-    const treatmentStats = await prisma.treatment.groupBy({
-      by: ['type'],
-      _count: {
-        type: true
-      }
+    // Verificar que prisma esté inicializado correctamente
+    if (!prisma || typeof prisma.treatment === 'undefined') {
+      console.error('Prisma no está inicializado correctamente');
+      return [];
+    }
+    
+    const treatments = await prisma.treatment.findMany();
+
+    const treatmentMap = new Map<string, number>();
+
+    treatments.forEach(treatment => {
+      treatmentMap.set(treatment.procedure, (treatmentMap.get(treatment.procedure) ?? 0) + 1);
     });
 
-    return treatmentStats.map(t => ({
-      type: t.type,
-      count: t._count.type
+    return Array.from(treatmentMap.entries()).map(([type, count]) => ({
+      type,
+      count,
     }));
   } catch (error) {
-    console.error('Error fetching treatment stats:', error);
+    console.error('Error obteniendo estadísticas de tratamientos:', error);
     return [];
   }
 }

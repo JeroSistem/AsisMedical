@@ -1,263 +1,820 @@
 
 'use client';
 
-import { AppLayout } from '@/components/shared';
+import React, { useState } from 'react';
+import { ModulePageLayout, ModuleCard } from '@/components/shared/module-page-layout';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
-import { Switch } from '@/components/ui/switch';
-import { Upload } from 'lucide-react';
-import { useState } from 'react';
-import { useToast } from '@/hooks/use-toast';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { Upload, Save, Building2, User, Calculator, FileText, Settings } from 'lucide-react';
+import { toast } from 'sonner';
+
+interface InstitutionFormData {
+  // Información Institucional
+  institutionName: string;
+  institutionNIT: string;
+  institutionType: string;
+  institutionCode: string;
+  institutionLogo: File | null;
+  institutionAddress: string;
+  institutionDepartment: string;
+  institutionCity: string;
+  institutionPhone: string;
+  institutionEmail: string;
+  institutionWebsite: string;
+
+  // Representante Legal
+  legalTitle: string;
+  legalName: string;
+  legalId: string;
+  legalPosition: string;
+  legalEmail: string;
+  legalPhone: string;
+  legalSignature: File | null;
+
+  // Cuentas Contables
+  accountEmergency: string;
+  accountReceiptDebit: string;
+  accountReceiptCredit: string;
+  accountCopays: string;
+  accountModeratingFee: string;
+  accountDiscounts: string;
+  accountVAT: string;
+  accountDonations: string;
+
+  // Centros de Costos
+  costCenterEmergency: string;
+  serviceCenterEmergency: string;
+  costCenterDentistry: string;
+  serviceCenterDentistry: string;
+  costCenterPediatrics: string;
+  costCenterSurgery: string;
+
+  // Documentos Contables
+  docReceipts: string;
+  docInvoicesPosted: string;
+  docInvoicesPending: string;
+  docPurchases: string;
+  docInventoryIn: string;
+  docInventoryOut: string;
+  docAmbulatoryDelivery: string;
+
+  // Parámetros Operativos
+  paramBudgetItem: string;
+  paramLockHours: number;
+  paramPaymentOrders: string;
+  paramPYM202: string;
+  paramMandatoryAccounts: string;
+  paramAppointmentReminder: string;
+  paramEditWindow: number;
+}
 
 export default function InstitutionPage() {
-  const { toast } = useToast();
-  const [formData, setFormData] = useState({
-    nombreInstitucion: 'ASIS medical Plus',
-    nit: '900.123.456-7',
-    direccion: 'Calle Falsa 123',
-    departamento: 'Antioquia',
-    ciudad: 'Medellín',
-    telefono: '+57 4 1234567',
-    email: 'contacto@asismedical.com',
-    codigoIps: '0500112345',
-    logo: '',
-    nombreRepresentante: 'Dr. Juan Pérez',
-    tratamientoRepresentante: 'Doctor',
-    firmaRepresentante: '',
-    ccUrgencias: '',
-    ccRecibosDebito: '',
-    ccRecibosCredito: '',
-    ccCopagos: '',
-    ccCuotaModeradora: '',
-    ccDescuentos: '',
-    ccIvaCompras: '',
-    costosUrgencias: '',
-    serviciosUrgencias: '',
-    costosOdontologia: '',
-    serviciosOdontologia: '',
-    docRecibosCaja: '',
-    docFacturasRadicadas: '',
-    docFacturasSinRadicar: '',
-    docCompras: '',
-    docIngresoInventario: '',
-    docSalidaInventario: '',
-    docEntregaInventario: '',
-    rubroPresupuesto: '',
-    horasBloqueo: 24,
-    ifPagoEgreso: false,
-    ifPym202: false,
-    ifPagoObligatorias: false,
-    ifRecordatorioCita: true,
+  const [formData, setFormData] = useState<InstitutionFormData>({
+    // Información Institucional
+    institutionName: '',
+    institutionNIT: '',
+    institutionType: 'hospital',
+    institutionCode: '',
+    institutionLogo: null,
+    institutionAddress: '',
+    institutionDepartment: '',
+    institutionCity: '',
+    institutionPhone: '',
+    institutionEmail: '',
+    institutionWebsite: '',
+
+    // Representante Legal
+    legalTitle: 'dr',
+    legalName: '',
+    legalId: '',
+    legalPosition: '',
+    legalEmail: '',
+    legalPhone: '',
+    legalSignature: null,
+
+    // Cuentas Contables
+    accountEmergency: '',
+    accountReceiptDebit: '',
+    accountReceiptCredit: '',
+    accountCopays: '',
+    accountModeratingFee: '',
+    accountDiscounts: '',
+    accountVAT: '',
+    accountDonations: '',
+
+    // Centros de Costos
+    costCenterEmergency: '',
+    serviceCenterEmergency: '',
+    costCenterDentistry: '',
+    serviceCenterDentistry: '',
+    costCenterPediatrics: '',
+    costCenterSurgery: '',
+
+    // Documentos Contables
+    docReceipts: '',
+    docInvoicesPosted: '',
+    docInvoicesPending: '',
+    docPurchases: '',
+    docInventoryIn: '',
+    docInventoryOut: '',
+    docAmbulatoryDelivery: '',
+
+    // Parámetros Operativos
+    paramBudgetItem: '',
+    paramLockHours: 24,
+    paramPaymentOrders: '',
+    paramPYM202: '',
+    paramMandatoryAccounts: '',
+    paramAppointmentReminder: 'none',
+    paramEditWindow: 24,
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { id, value, type } = e.target;
+  const handleInputChange = (field: keyof InstitutionFormData, value: string | number | File | null) => {
     setFormData(prev => ({
       ...prev,
-      [id]: type === 'number' ? parseInt(value) : value
+      [field]: value
     }));
   };
-  
-  const handleSwitchChange = (id: string, checked: boolean) => {
-     setFormData(prev => ({ ...prev, [id]: checked }));
-  }
 
-  const handleSave = () => {
-    console.log('Datos guardados:', formData);
-    toast({
-        title: "Cambios Guardados",
-        description: "La información de la institución ha sido actualizada.",
-    })
+  const handleFileChange = (field: 'institutionLogo' | 'legalSignature', file: File | null) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: file
+    }));
   };
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Validar campos obligatorios
+    const requiredFields = [
+      'institutionName', 'institutionNIT', 'institutionCode', 'institutionAddress',
+      'institutionDepartment', 'institutionCity', 'institutionPhone', 'institutionEmail',
+      'legalName', 'legalId', 'legalPosition'
+    ];
+
+    const missingFields = requiredFields.filter(field => !formData[field as keyof InstitutionFormData]);
+    
+    if (missingFields.length > 0) {
+      toast.error('Por favor complete todos los campos obligatorios');
+      return;
+    }
+
+    try {
+      // Aquí iría la lógica para enviar los datos al servidor
+      console.log('Datos del formulario:', formData);
+      toast.success('Configuración guardada correctamente');
+    } catch (error) {
+      toast.error('Error al guardar la configuración');
+    }
+  };
+
+  const actions = (
+    <Button type="submit" form="institution-form">
+      <Save className="h-4 w-4 mr-2" />
+      Guardar Configuración
+    </Button>
+  );
+
   return (
-    <AppLayout>
-      <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
-        <div className="flex items-center justify-between space-y-2">
-          <h2 className="text-3xl font-bold tracking-tight">Configuración de la Institución</h2>
-        </div>
-        
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Información Básica</CardTitle>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label htmlFor="nombreInstitucion">Nombre de la Institución</Label>
-                <Input id="nombreInstitucion" value={formData.nombreInstitucion} onChange={handleChange} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="nit">NIT</Label>
-                <Input id="nit" value={formData.nit} onChange={handleChange} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="direccion">Dirección</Label>
-                <Input id="direccion" value={formData.direccion} onChange={handleChange} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="departamento">Departamento</Label>
-                <Input id="departamento" value={formData.departamento} onChange={handleChange} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="ciudad">Ciudad</Label>
-                <Input id="ciudad" value={formData.ciudad} onChange={handleChange} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="telefono">Teléfono</Label>
-                <Input id="telefono" value={formData.telefono} onChange={handleChange} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" value={formData.email} onChange={handleChange} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="codigoIps">Código IPS</Label>
-                <Input id="codigoIps" value={formData.codigoIps} onChange={handleChange} />
-              </div>
-              <div className="space-y-2 col-span-full">
-                <Label htmlFor="logo">Logo</Label>
-                <div className="flex items-center gap-4">
-                  <Input id="logo" type="file" className="max-w-xs" />
-                  <Button variant="outline" size="icon"><Upload className="h-4 w-4" /></Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+    <ModulePageLayout
+      title="Configuración de Institución"
+      description="Administre la información de la institución médica"
+      actions={actions}
+      maxWidth="7xl"
+      showBackButton={true}
+    >
+      <form id="institution-form" onSubmit={handleSubmit} className="space-y-6">
+        {/* Sección 1: Información Institucional */}
+        <ModuleCard>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Building2 className="h-5 w-5" />
+              Información Institucional
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Representante Legal</CardTitle>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="nombreRepresentante">Nombre del Representante</Label>
-                <Input id="nombreRepresentante" value={formData.nombreRepresentante} onChange={handleChange} />
+                <Label htmlFor="institutionName" className="flex items-center gap-1">
+                  Nombre de la Institución
+                  <Badge variant="destructive" className="text-xs">*</Badge>
+                </Label>
+                <Input
+                  id="institutionName"
+                  value={formData.institutionName}
+                  onChange={(e) => handleInputChange('institutionName', e.target.value)}
+                  placeholder="Nombre de la institución"
+                  required
+                />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="tratamientoRepresentante">Tratamiento</Label>
-                <Input id="tratamientoRepresentante" value={formData.tratamientoRepresentante} onChange={handleChange} />
-              </div>
-              <div className="space-y-2 col-span-full">
-                <Label htmlFor="firmaRepresentante">Firma</Label>
-                 <div className="flex items-center gap-4">
-                  <Input id="firmaRepresentante" type="file" className="max-w-xs" />
-                  <Button variant="outline" size="icon"><Upload className="h-4 w-4" /></Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Cuentas Contables</CardTitle>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="ccUrgencias">Cuenta Contable Urgencias</Label>
-                <Input id="ccUrgencias" value={formData.ccUrgencias} onChange={handleChange} />
+                <Label htmlFor="institutionNIT" className="flex items-center gap-1">
+                  NIT
+                  <Badge variant="destructive" className="text-xs">*</Badge>
+                </Label>
+                <Input
+                  id="institutionNIT"
+                  value={formData.institutionNIT}
+                  onChange={(e) => handleInputChange('institutionNIT', e.target.value)}
+                  placeholder="NIT de la institución"
+                  required
+                />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="ccRecibosDebito">Cuenta Contable Recibos de Caja (Débito)</Label>
-                <Input id="ccRecibosDebito" value={formData.ccRecibosDebito} onChange={handleChange} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="ccRecibosCredito">Cuenta Contable Recibos de Caja (Crédito)</Label>
-                <Input id="ccRecibosCredito" value={formData.ccRecibosCredito} onChange={handleChange} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="ccCopagos">Cuenta Contable Copagos</Label>
-                <Input id="ccCopagos" value={formData.ccCopagos} onChange={handleChange} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="ccCuotaModeradora">Cuenta Contable Cuota Moderadora</Label>
-                <Input id="ccCuotaModeradora" value={formData.ccCuotaModeradora} onChange={handleChange} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="ccDescuentos">Cuenta Contable Descuentos</Label>
-                <Input id="ccDescuentos" value={formData.ccDescuentos} onChange={handleChange} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="ccIvaCompras">Cuenta Contable IVA Compras</Label>
-                <Input id="ccIvaCompras" value={formData.ccIvaCompras} onChange={handleChange} />
-              </div>
-            </CardContent>
-          </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Gestión de Centros Operativos y de Costos</CardTitle>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="costosUrgencias">Centro de Costos Urgencias</Label>
-                <Input id="costosUrgencias" value={formData.costosUrgencias} onChange={handleChange} />
+                <Label htmlFor="institutionType">Tipo de Institución</Label>
+                <Select value={formData.institutionType} onValueChange={(value) => handleInputChange('institutionType', value)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="hospital">Hospital</SelectItem>
+                    <SelectItem value="clinic">Clínica Privada</SelectItem>
+                    <SelectItem value="ips">IPS</SelectItem>
+                    <SelectItem value="other">Otro</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="serviciosUrgencias">Centro de Servicios Urgencias</Label>
-                <Input id="serviciosUrgencias" value={formData.serviciosUrgencias} onChange={handleChange} />
-              </div>
-               <div className="space-y-2">
-                <Label htmlFor="costosOdontologia">Centro de Costos Odontología</Label>
-                <Input id="costosOdontologia" value={formData.costosOdontologia} onChange={handleChange} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="serviciosOdontologia">Centro de Servicios Odontología</Label>
-                <Input id="serviciosOdontologia" value={formData.serviciosOdontologia} onChange={handleChange} />
-              </div>
-            </CardContent>
-          </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Documentos Contables</CardTitle>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2"><Label htmlFor="docRecibosCaja">Recibos de Caja</Label><Input id="docRecibosCaja" value={formData.docRecibosCaja} onChange={handleChange} /></div>
-              <div className="space-y-2"><Label htmlFor="docFacturasRadicadas">Facturas Radicadas</Label><Input id="docFacturasRadicadas" value={formData.docFacturasRadicadas} onChange={handleChange} /></div>
-              <div className="space-y-2"><Label htmlFor="docFacturasSinRadicar">Facturas sin Radicar</Label><Input id="docFacturasSinRadicar" value={formData.docFacturasSinRadicar} onChange={handleChange} /></div>
-              <div className="space-y-2"><Label htmlFor="docCompras">Compras</Label><Input id="docCompras" value={formData.docCompras} onChange={handleChange} /></div>
-              <div className="space-y-2"><Label htmlFor="docIngresoInventario">Notas Ingreso Inventario</Label><Input id="docIngresoInventario" value={formData.docIngresoInventario} onChange={handleChange} /></div>
-              <div className="space-y-2"><Label htmlFor="docSalidaInventario">Notas Salida Inventario</Label><Input id="docSalidaInventario" value={formData.docSalidaInventario} onChange={handleChange} /></div>
-              <div className="space-y-2"><Label htmlFor="docEntregaInventario">Entrega Ambulatoria Inventario</Label><Input id="docEntregaInventario" value={formData.docEntregaInventario} onChange={handleChange} /></div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>Otras Parametrizaciones</CardTitle>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2"><Label htmlFor="rubroPresupuesto">Rubro de Presupuesto Recibos de Caja</Label><Input id="rubroPresupuesto" value={formData.rubroPresupuesto} onChange={handleChange} /></div>
-                <div className="space-y-2"><Label htmlFor="horasBloqueo">Horas Espera Bloquear Documentos Médicos</Label><Input id="horasBloqueo" type="number" value={formData.horasBloqueo} onChange={handleChange} /></div>
-                <div className="flex items-center space-x-4 rounded-md border p-4 col-span-1">
-                    <div className="flex-1 space-y-1"><p className="text-sm font-medium leading-none">Interface Ordenes de Pago Egreso</p></div>
-                    <Switch id="ifPagoEgreso" checked={formData.ifPagoEgreso} onCheckedChange={(checked) => handleSwitchChange('ifPagoEgreso', checked)} />
-                </div>
-                 <div className="flex items-center space-x-4 rounded-md border p-4 col-span-1">
-                    <div className="flex-1 space-y-1"><p className="text-sm font-medium leading-none">Interface PYM 202</p></div>
-                    <Switch id="ifPym202" checked={formData.ifPym202} onCheckedChange={(checked) => handleSwitchChange('ifPym202', checked)} />
-                </div>
-                 <div className="flex items-center space-x-4 rounded-md border p-4 col-span-1">
-                    <div className="flex-1 space-y-1"><p className="text-sm font-medium leading-none">Ordenes Pago Cuentas Contables Obligatorias</p></div>
-                    <Switch id="ifPagoObligatorias" checked={formData.ifPagoObligatorias} onCheckedChange={(checked) => handleSwitchChange('ifPagoObligatorias', checked)} />
-                </div>
-                 <div className="flex items-center space-x-4 rounded-md border p-4 col-span-1">
-                    <div className="flex-1 space-y-1"><p className="text-sm font-medium leading-none">Enviar Recordatorio Cita</p></div>
-                    <Switch id="ifRecordatorioCita" checked={formData.ifRecordatorioCita} onCheckedChange={(checked) => handleSwitchChange('ifRecordatorioCita', checked)} />
-                </div>
-            </CardContent>
-          </Card>
+              <div className="space-y-2">
+                <Label htmlFor="institutionCode" className="flex items-center gap-1">
+                  Código IPS
+                  <Badge variant="destructive" className="text-xs">*</Badge>
+                </Label>
+                <Input
+                  id="institutionCode"
+                  value={formData.institutionCode}
+                  onChange={(e) => handleInputChange('institutionCode', e.target.value)}
+                  placeholder="Código IPS"
+                  required
+                />
+              </div>
 
-          <div className="flex justify-end pt-4">
-            <Button size="lg" onClick={handleSave}>Guardar Cambios</Button>
-          </div>
-        </div>
-      </div>
-    </AppLayout>
+              <div className="space-y-2">
+                <Label>Logo Institucional</Label>
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
+                  <Upload className="h-8 w-8 mx-auto text-gray-400 mb-2" />
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleFileChange('institutionLogo', e.target.files?.[0] || null)}
+                    className="hidden"
+                    id="institutionLogo"
+                  />
+                  <Label htmlFor="institutionLogo" className="cursor-pointer text-blue-600 hover:text-blue-700">
+                    Arrastra o selecciona un archivo
+                  </Label>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="institutionAddress" className="flex items-center gap-1">
+                  Dirección
+                  <Badge variant="destructive" className="text-xs">*</Badge>
+                </Label>
+                <Input
+                  id="institutionAddress"
+                  value={formData.institutionAddress}
+                  onChange={(e) => handleInputChange('institutionAddress', e.target.value)}
+                  placeholder="Dirección completa"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="institutionDepartment" className="flex items-center gap-1">
+                  Departamento
+                  <Badge variant="destructive" className="text-xs">*</Badge>
+                </Label>
+                <Input
+                  id="institutionDepartment"
+                  value={formData.institutionDepartment}
+                  onChange={(e) => handleInputChange('institutionDepartment', e.target.value)}
+                  placeholder="Departamento"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="institutionCity" className="flex items-center gap-1">
+                  Ciudad
+                  <Badge variant="destructive" className="text-xs">*</Badge>
+                </Label>
+                <Input
+                  id="institutionCity"
+                  value={formData.institutionCity}
+                  onChange={(e) => handleInputChange('institutionCity', e.target.value)}
+                  placeholder="Ciudad"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="institutionPhone" className="flex items-center gap-1">
+                  Teléfono
+                  <Badge variant="destructive" className="text-xs">*</Badge>
+                </Label>
+                <Input
+                  id="institutionPhone"
+                  type="tel"
+                  value={formData.institutionPhone}
+                  onChange={(e) => handleInputChange('institutionPhone', e.target.value)}
+                  placeholder="Teléfono"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="institutionEmail" className="flex items-center gap-1">
+                  Email
+                  <Badge variant="destructive" className="text-xs">*</Badge>
+                </Label>
+                <Input
+                  id="institutionEmail"
+                  type="email"
+                  value={formData.institutionEmail}
+                  onChange={(e) => handleInputChange('institutionEmail', e.target.value)}
+                  placeholder="Email"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="institutionWebsite">Página Web</Label>
+                <Input
+                  id="institutionWebsite"
+                  value={formData.institutionWebsite}
+                  onChange={(e) => handleInputChange('institutionWebsite', e.target.value)}
+                  placeholder="https://www.ejemplo.com"
+                />
+              </div>
+            </div>
+          </CardContent>
+        </ModuleCard>
+
+        {/* Sección 2: Representante Legal */}
+        <ModuleCard>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <User className="h-5 w-5" />
+              Representante Legal
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label htmlFor="legalTitle">Tratamiento</Label>
+                <Select value={formData.legalTitle} onValueChange={(value) => handleInputChange('legalTitle', value)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="dr">Dr.</SelectItem>
+                    <SelectItem value="dra">Dra.</SelectItem>
+                    <SelectItem value="sr">Sr.</SelectItem>
+                    <SelectItem value="sra">Sra.</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="legalName" className="flex items-center gap-1">
+                  Nombre Completo
+                  <Badge variant="destructive" className="text-xs">*</Badge>
+                </Label>
+                <Input
+                  id="legalName"
+                  value={formData.legalName}
+                  onChange={(e) => handleInputChange('legalName', e.target.value)}
+                  placeholder="Nombre completo"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="legalId" className="flex items-center gap-1">
+                  Documento de Identidad
+                  <Badge variant="destructive" className="text-xs">*</Badge>
+                </Label>
+                <Input
+                  id="legalId"
+                  value={formData.legalId}
+                  onChange={(e) => handleInputChange('legalId', e.target.value)}
+                  placeholder="Número de documento"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="legalPosition" className="flex items-center gap-1">
+                  Cargo
+                  <Badge variant="destructive" className="text-xs">*</Badge>
+                </Label>
+                <Input
+                  id="legalPosition"
+                  value={formData.legalPosition}
+                  onChange={(e) => handleInputChange('legalPosition', e.target.value)}
+                  placeholder="Cargo del representante"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="legalEmail">Email</Label>
+                <Input
+                  id="legalEmail"
+                  type="email"
+                  value={formData.legalEmail}
+                  onChange={(e) => handleInputChange('legalEmail', e.target.value)}
+                  placeholder="Email del representante"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="legalPhone">Teléfono</Label>
+                <Input
+                  id="legalPhone"
+                  type="tel"
+                  value={formData.legalPhone}
+                  onChange={(e) => handleInputChange('legalPhone', e.target.value)}
+                  placeholder="Teléfono del representante"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Firma Digital</Label>
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
+                  <Upload className="h-8 w-8 mx-auto text-gray-400 mb-2" />
+                  <Input
+                    type="file"
+                    accept="image/*,.pdf"
+                    onChange={(e) => handleFileChange('legalSignature', e.target.files?.[0] || null)}
+                    className="hidden"
+                    id="legalSignature"
+                  />
+                  <Label htmlFor="legalSignature" className="cursor-pointer text-blue-600 hover:text-blue-700">
+                    Seleccionar archivo
+                  </Label>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </ModuleCard>
+
+        {/* Sección 3: Cuentas Contables */}
+        <ModuleCard>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Calculator className="h-5 w-5" />
+              Cuentas Contables
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label htmlFor="accountEmergency">Urgencias</Label>
+                <Input
+                  id="accountEmergency"
+                  value={formData.accountEmergency}
+                  onChange={(e) => handleInputChange('accountEmergency', e.target.value)}
+                  placeholder="Código de cuenta"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="accountReceiptDebit">Recibos de Caja Débito</Label>
+                <Input
+                  id="accountReceiptDebit"
+                  value={formData.accountReceiptDebit}
+                  onChange={(e) => handleInputChange('accountReceiptDebit', e.target.value)}
+                  placeholder="Código de cuenta"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="accountReceiptCredit">Recibos de Caja Crédito</Label>
+                <Input
+                  id="accountReceiptCredit"
+                  value={formData.accountReceiptCredit}
+                  onChange={(e) => handleInputChange('accountReceiptCredit', e.target.value)}
+                  placeholder="Código de cuenta"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="accountCopays">Copagos</Label>
+                <Input
+                  id="accountCopays"
+                  value={formData.accountCopays}
+                  onChange={(e) => handleInputChange('accountCopays', e.target.value)}
+                  placeholder="Código de cuenta"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="accountModeratingFee">Cuota Moderadora</Label>
+                <Input
+                  id="accountModeratingFee"
+                  value={formData.accountModeratingFee}
+                  onChange={(e) => handleInputChange('accountModeratingFee', e.target.value)}
+                  placeholder="Código de cuenta"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="accountDiscounts">Descuentos</Label>
+                <Input
+                  id="accountDiscounts"
+                  value={formData.accountDiscounts}
+                  onChange={(e) => handleInputChange('accountDiscounts', e.target.value)}
+                  placeholder="Código de cuenta"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="accountVAT">IVA Compras</Label>
+                <Input
+                  id="accountVAT"
+                  value={formData.accountVAT}
+                  onChange={(e) => handleInputChange('accountVAT', e.target.value)}
+                  placeholder="Código de cuenta"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="accountDonations">Donaciones/Subsidios</Label>
+                <Input
+                  id="accountDonations"
+                  value={formData.accountDonations}
+                  onChange={(e) => handleInputChange('accountDonations', e.target.value)}
+                  placeholder="Código de cuenta"
+                />
+              </div>
+            </div>
+          </CardContent>
+        </ModuleCard>
+
+        {/* Sección 4: Centros de Costos */}
+        <ModuleCard>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Calculator className="h-5 w-5" />
+              Centros de Costos/Servicios
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label htmlFor="costCenterEmergency">Urgencias</Label>
+                <Input
+                  id="costCenterEmergency"
+                  value={formData.costCenterEmergency}
+                  onChange={(e) => handleInputChange('costCenterEmergency', e.target.value)}
+                  placeholder="Código"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="serviceCenterEmergency">Servicio Urgencias</Label>
+                <Input
+                  id="serviceCenterEmergency"
+                  value={formData.serviceCenterEmergency}
+                  onChange={(e) => handleInputChange('serviceCenterEmergency', e.target.value)}
+                  placeholder="Código"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="costCenterDentistry">Odontología</Label>
+                <Input
+                  id="costCenterDentistry"
+                  value={formData.costCenterDentistry}
+                  onChange={(e) => handleInputChange('costCenterDentistry', e.target.value)}
+                  placeholder="Código"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="serviceCenterDentistry">Servicio Odontología</Label>
+                <Input
+                  id="serviceCenterDentistry"
+                  value={formData.serviceCenterDentistry}
+                  onChange={(e) => handleInputChange('serviceCenterDentistry', e.target.value)}
+                  placeholder="Código"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="costCenterPediatrics">Pediatría</Label>
+                <Input
+                  id="costCenterPediatrics"
+                  value={formData.costCenterPediatrics}
+                  onChange={(e) => handleInputChange('costCenterPediatrics', e.target.value)}
+                  placeholder="Código"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="costCenterSurgery">Cirugía</Label>
+                <Input
+                  id="costCenterSurgery"
+                  value={formData.costCenterSurgery}
+                  onChange={(e) => handleInputChange('costCenterSurgery', e.target.value)}
+                  placeholder="Código"
+                />
+              </div>
+            </div>
+          </CardContent>
+        </ModuleCard>
+
+        {/* Sección 5: Documentos Contables */}
+        <ModuleCard>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              Documentos Contables
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label htmlFor="docReceipts">Recibos de Caja</Label>
+                <Input
+                  id="docReceipts"
+                  value={formData.docReceipts}
+                  onChange={(e) => handleInputChange('docReceipts', e.target.value)}
+                  placeholder="Formato RC-001"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="docInvoicesPosted">Facturas Radicadas</Label>
+                <Input
+                  id="docInvoicesPosted"
+                  value={formData.docInvoicesPosted}
+                  onChange={(e) => handleInputChange('docInvoicesPosted', e.target.value)}
+                  placeholder="Formato"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="docInvoicesPending">Facturas Sin Radicar</Label>
+                <Input
+                  id="docInvoicesPending"
+                  value={formData.docInvoicesPending}
+                  onChange={(e) => handleInputChange('docInvoicesPending', e.target.value)}
+                  placeholder="Formato"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="docPurchases">Compras</Label>
+                <Input
+                  id="docPurchases"
+                  value={formData.docPurchases}
+                  onChange={(e) => handleInputChange('docPurchases', e.target.value)}
+                  placeholder="Formato"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="docInventoryIn">Notas Ingreso Inventario</Label>
+                <Input
+                  id="docInventoryIn"
+                  value={formData.docInventoryIn}
+                  onChange={(e) => handleInputChange('docInventoryIn', e.target.value)}
+                  placeholder="Formato"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="docInventoryOut">Notas Salida Inventario</Label>
+                <Input
+                  id="docInventoryOut"
+                  value={formData.docInventoryOut}
+                  onChange={(e) => handleInputChange('docInventoryOut', e.target.value)}
+                  placeholder="Formato"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="docAmbulatoryDelivery">Entrega Ambulatoria</Label>
+                <Input
+                  id="docAmbulatoryDelivery"
+                  value={formData.docAmbulatoryDelivery}
+                  onChange={(e) => handleInputChange('docAmbulatoryDelivery', e.target.value)}
+                  placeholder="Formato"
+                />
+              </div>
+            </div>
+          </CardContent>
+        </ModuleCard>
+
+        {/* Sección 6: Parámetros Operativos */}
+        <ModuleCard>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Settings className="h-5 w-5" />
+              Parámetros Operativos
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label htmlFor="paramBudgetItem">Rubro Presupuestal Recibos</Label>
+                <Input
+                  id="paramBudgetItem"
+                  value={formData.paramBudgetItem}
+                  onChange={(e) => handleInputChange('paramBudgetItem', e.target.value)}
+                  placeholder="Rubro presupuestal"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="paramLockHours">Horas para Bloquear Documentos</Label>
+                <Input
+                  id="paramLockHours"
+                  type="number"
+                  min="1"
+                  value={formData.paramLockHours}
+                  onChange={(e) => handleInputChange('paramLockHours', parseInt(e.target.value) || 24)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="paramPaymentOrders">Interface Órdenes de Pago</Label>
+                <Input
+                  id="paramPaymentOrders"
+                  value={formData.paramPaymentOrders}
+                  onChange={(e) => handleInputChange('paramPaymentOrders', e.target.value)}
+                  placeholder="Interface"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="paramPYM202">Interface PYM 202</Label>
+                <Input
+                  id="paramPYM202"
+                  value={formData.paramPYM202}
+                  onChange={(e) => handleInputChange('paramPYM202', e.target.value)}
+                  placeholder="Interface"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="paramMandatoryAccounts">Cuentas Contables Obligatorias</Label>
+                <Textarea
+                  id="paramMandatoryAccounts"
+                  value={formData.paramMandatoryAccounts}
+                  onChange={(e) => handleInputChange('paramMandatoryAccounts', e.target.value)}
+                  placeholder="Lista de cuentas obligatorias"
+                  rows={3}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="paramAppointmentReminder">Recordatorio de Citas</Label>
+                <Select value={formData.paramAppointmentReminder} onValueChange={(value) => handleInputChange('paramAppointmentReminder', value)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No enviar</SelectItem>
+                    <SelectItem value="email">Email</SelectItem>
+                    <SelectItem value="sms">SMS</SelectItem>
+                    <SelectItem value="both">Ambos</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="paramEditWindow">Editar Documentos (horas)</Label>
+                <Input
+                  id="paramEditWindow"
+                  type="number"
+                  min="1"
+                  value={formData.paramEditWindow}
+                  onChange={(e) => handleInputChange('paramEditWindow', parseInt(e.target.value) || 24)}
+                />
+              </div>
+            </div>
+          </CardContent>
+        </ModuleCard>
+      </form>
+    </ModulePageLayout>
   );
 }
 

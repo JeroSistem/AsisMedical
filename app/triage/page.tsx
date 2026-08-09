@@ -1,16 +1,17 @@
 "use client";
 
-import { useState } from 'react';
-import { AppLayout } from '@/components/shared';
+import { useEffect, useState } from 'react';
+import { ModulePageLayout, ModuleCard } from '@/components/shared/module-page-layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Search, Activity, Clock, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Plus, Search, Activity, Clock, AlertTriangle, CheckCircle, UserPlus, Stethoscope } from 'lucide-react';
 import { TriageForm } from '@/components/shared/modal-form';
 import { useModalForm } from '@/hooks/use-modal-form';
+import { useRouter } from 'next/navigation';
 
-// Datos de ejemplo para triage
+// Datos de ejemplo para triage (fallback)
 const mockTriage = [
   {
     id: 1,
@@ -72,9 +73,42 @@ const statusLabels = {
 
 export default function TriagePage() {
   const [searchTerm, setSearchTerm] = useState('');
+  const [items, setItems] = useState<any[]>(mockTriage);
+  const [canWrite, setCanWrite] = useState<boolean>(false);
+  const router = useRouter();
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch('/api/triage');
+        const json = await res.json();
+        if (json?.success) {
+          const mapped = (json.data || []).map((t: any) => ({
+            id: t.id,
+            patientName: t.patient?.name || 'Paciente',
+            priority: String(t.urgencyLevel || 'medium').toLowerCase(),
+            symptoms: t.notes || '',
+            vitalSigns: t.vitalSigns?.raw || '',
+            status: 'waiting',
+            createdAt: new Date(t.createdAt).toLocaleString(),
+            observations: t.notes || '',
+          }));
+          setItems(mapped);
+        }
+      } catch {}
+    })();
+  }, []);
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await fetch('/api/navigation/permissions?module=triage');
+        const j = await r.json();
+        if (j?.success) setCanWrite((j.data || []).includes('write'));
+      } catch {}
+    })();
+  }, []);
   const { isOpen, formData, openModal, closeModal, handleSubmit } = useModalForm();
 
-  const filteredTriage = mockTriage.filter(triage =>
+  const filteredTriage = items.filter(triage =>
     triage.patientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     triage.symptoms.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -82,10 +116,34 @@ export default function TriagePage() {
   const handleCreateTriage = async (formData: FormData) => {
     try {
       const data = Object.fromEntries(formData.entries());
-      console.log('Nuevo triage:', data);
-      // Aquí puedes hacer la llamada a la API para crear el triage
+      const payload = {
+        patientId: data.patientId,
+        priority: data.priority,
+        symptoms: data.symptoms,
+        vitalSigns: data.vitalSigns,
+        observations: data.observations,
+      };
+      const res = await fetch('/api/triage', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      const json = await res.json();
+      if (json?.success) {
+        // refrescar lista
+        const r = await fetch('/api/triage');
+        const j = await r.json();
+        if (j?.success) {
+          const mapped = (j.data || []).map((t: any) => ({
+            id: t.id,
+            patientName: t.patient?.name || 'Paciente',
+            priority: String(t.urgencyLevel || 'medium').toLowerCase(),
+            symptoms: t.notes || '',
+            vitalSigns: t.vitalSigns?.raw || '',
+            status: 'waiting',
+            createdAt: new Date(t.createdAt).toLocaleString(),
+            observations: t.notes || '',
+          }));
+          setItems(mapped);
+        }
+      }
       closeModal();
-      // Recargar la lista de triage
     } catch (error) {
       console.error('Error al crear triage:', error);
     }
@@ -106,20 +164,30 @@ export default function TriagePage() {
     }
   };
 
+  const actions = canWrite ? (
+    <>
+      <Button onClick={() => router.push('/triage/ingreso-paciente')} variant="outline">
+        <UserPlus className="h-4 w-4 mr-2" />
+        Ingreso Paciente
+      </Button>
+      <Button onClick={() => router.push('/triage/valoracion')} variant="outline">
+        <Stethoscope className="h-4 w-4 mr-2" />
+        Valoración Triage
+      </Button>
+      <Button onClick={() => openModal()}>
+        <Plus className="h-4 w-4 mr-2" />
+        Nuevo Triage
+      </Button>
+    </>
+  ) : null;
+
   return (
-    <AppLayout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Triage</h1>
-            <p className="text-gray-600 mt-1">Gestiona la priorización de pacientes</p>
-          </div>
-          <Button onClick={() => openModal()} className="flex items-center gap-2">
-            <Plus className="h-4 w-4" />
-            Nuevo Triage
-          </Button>
-        </div>
+    <ModulePageLayout
+      title="Cola de triage y clasificación"
+      description="Priorización de urgencias — ASIS Medical Head"
+      actions={actions}
+      maxWidth="7xl"
+    >
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -253,7 +321,6 @@ export default function TriagePage() {
             </div>
           </CardContent>
         </Card>
-      </div>
 
       {/* Modal Form */}
       <TriageForm
@@ -262,6 +329,6 @@ export default function TriagePage() {
         onSubmit={handleCreateTriage}
         triage={formData}
       />
-    </AppLayout>
+    </ModulePageLayout>
   );
 }

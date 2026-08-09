@@ -1,23 +1,10 @@
-import { withAuth } from "next-auth/middleware";
+import { NextResponse } from 'next/server'
 
-export default withAuth(
-  function middleware(req) {
-    // Aquí puedes agregar lógica adicional si es necesario
-  },
-  {
-    callbacks: {
-      authorized: ({ token }) => !!token,
-    },
-  }
-);
+// Auth desactivada: permitir todas las rutas sin verificación
+export default function middleware() {
+  return NextResponse.next()
+}
 
 export const config = {
-  matcher: [
-    "/dashboard/:path*",
-    "/patients/:path*",
-    "/historias/:path*",
-    "/admin/:path*",
-    "/triage/:path*",
-    "/test-db",
-  ],
-}; 
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|public).*)']
+}

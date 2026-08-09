@@ -2,6 +2,9 @@
 
 # dependencies
 /node_modules
+/_node_modules_trash_*/
+/._next_corrupt_*/
+/._openid_corrupt_*/
 /.pnp
 .pnp.*
 .yarn/*
@@ -39,8 +42,13 @@ next-env.d.ts
 
 .genkit/*
 .env*
+!.env.example
+!env.example
+!env.local.example
 
 # firebase
 firebase-debug.log
 firestore-debug.log
 /src/generated/prisma
+
+/lib/generated/prisma

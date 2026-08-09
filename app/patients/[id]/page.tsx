@@ -2,14 +2,16 @@
 import { notFound } from 'next/navigation';
 import { AppLayout } from '@/components/shared';
 import { PatientDetailClient } from '@/components/modules/patients';
-import { getPatientById, getMedicalRecordByPatientId } from '@/lib/data';
+import { getPatientById } from '@/lib/actions/patients';
+import { getMedicalRecordByPatientId } from '@/lib/data';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 
-export default async function PatientDetailPage({ params }: { params: { id: string } }) {
-  const patient = await getPatientById(params.id);
-  const medicalRecord = await getMedicalRecordByPatientId(params.id);
+export default async function PatientDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const patient = await getPatientById(id);
+  const medicalRecord = await getMedicalRecordByPatientId(id);
 
   if (!patient || !medicalRecord) {
     notFound();

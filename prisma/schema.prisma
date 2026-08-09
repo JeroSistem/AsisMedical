@@ -7,140 +7,30 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
-model User {
-  id        String   @id @default(uuid())
-  name      String
-  email     String   @unique
-  password  String?  // Campo para contraseña hasheada
-  role      UserRole
-  status    String   @default("Active")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+// ============================================
+// MODELOS DE AUTENTICACIÓN (NextAuth)
+// ============================================
 
-  // Campos para NextAuth.js
-  emailVerified DateTime?
-  image         String?
-
-  // Relaciones para NextAuth.js
-  accounts Account[]
-  sessions Session[]
-
-  @@map("users")
-}
-
-model Patient {
-  id           String          @id @default(uuid())
-  name         String
-  dateOfBirth  DateTime        @map("date_of_birth")
-  gender       String
-  contact      String?
-  address      String?
-  avatarUrl    String?         @map("avatar_url")
-  createdAt    DateTime        @default(now()) @map("created_at")
-  updatedAt    DateTime        @default(now()) @updatedAt @map("updated_at")
-  
-  medicalRecords MedicalRecord[]
-  triages       Triage[]
-
-  @@map("patients")
-}
-
-model MedicalRecord {
-  id            String           @id @default(uuid())
-  patientId     String           @map("patient_id")
-  medicalHistory String?         @map("medical_history")
-  currentStatus String?          @map("current_status")
-  createdAt     DateTime         @default(now()) @map("created_at")
-  updatedAt     DateTime         @default(now()) @updatedAt @map("updated_at")
-  
-  patient       Patient          @relation(fields: [patientId], references: [id], onDelete: Cascade)
-  diagnoses     Diagnosis[]
-  treatments    Treatment[]
-  documents     MedicalDocument[]
-
-  @@map("medical_records")
-}
-
-model Diagnosis {
-  id              String        @id @default(uuid())
-  medicalRecordId String        @map("medical_record_id")
-  date            DateTime
-  code            String
-  description     String
-  physician       String
-  createdAt       DateTime      @default(now()) @map("created_at")
-  
-  medicalRecord   MedicalRecord @relation(fields: [medicalRecordId], references: [id], onDelete: Cascade)
-
-  @@map("diagnoses")
-}
-
-model Treatment {
-  id              String        @id @default(uuid())
-  medicalRecordId String        @map("medical_record_id")
-  date            DateTime
-  procedure       String
-  medication      String?
-  dosage          String?
-  physician       String
-  createdAt       DateTime      @default(now()) @map("created_at")
-  
-  medicalRecord   MedicalRecord @relation(fields: [medicalRecordId], references: [id], onDelete: Cascade)
-
-  @@map("treatments")
-}
-
-model MedicalDocument {
-  id              String        @id @default(uuid())
-  medicalRecordId String        @map("medical_record_id")
-  date            DateTime
-  type            String
-  title           String
-  url             String?
-  createdAt       DateTime      @default(now()) @map("created_at")
-  
-  medicalRecord   MedicalRecord @relation(fields: [medicalRecordId], references: [id], onDelete: Cascade)
-
-  @@map("medical_documents")
-}
-
-model Triage {
-  id              String   @id @default(uuid())
-  patientId       String?  @map("patient_id")
-  arrivalTime     DateTime @map("arrival_time")
-  vitalSigns      Json?    @map("vital_signs")
-  consciousnessLevel String? @map("consciousness_level")
-  painLevel       Int?     @map("pain_level")
-  urgencyLevel    String   @map("urgency_level")
-  notes           String?
-  createdAt       DateTime @default(now()) @map("created_at")
-  
-  patient         Patient? @relation(fields: [patientId], references: [id])
-
-  @@map("triage")
-}
-
-// Modelos para NextAuth.js
 model Account {
   id                String  @id @default(cuid())
   userId            String  @map("user_id")
   type              String
   provider          String
   providerAccountId String  @map("provider_account_id")
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
-  expires_at        Int?
-  token_type        String?
+  refreshToken      String? @map("refresh_token") @db.Text
+  accessToken       String? @map("access_token") @db.Text
+  expiresAt         Int?    @map("expires_at")
+  tokenType         String? @map("token_type")
   scope             String?
-  id_token          String? @db.Text
-  session_state     String?
+  idToken           String? @map("id_token") @db.Text
+  sessionState      String? @map("session_state")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
+  @@index([userId])
   @@map("accounts")
 }
 
@@ -151,6 +41,7 @@ model Session {
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId])
   @@map("sessions")
 }
 
@@ -163,9 +54,435 @@ model VerificationToken {
   @@map("verification_tokens")
 }
 
+// ============================================
+// MODELOS DEL SISTEMA
+// ============================================
+
+model User {
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique
+  emailVerified DateTime? @map("emailVerified")
+  password      String?
+  role          UserRole
+  status        String    @default("Active")
+  entityId      String?   @map("entity_id")
+  image         String?
+  lastLogin     DateTime? @map("last_login")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  entity          Entity?          @relation("users_entity_idToentities", fields: [entityId], references: [id])
+  adminEntities   Entity[]         @relation("entities_admin_user_idTousers")
+  accounts        Account[]
+  sessions        Session[]
+  userPermissions UserPermission[]
+
+  @@index([email])
+  @@index([entityId])
+  @@map("users")
+}
+
+model Entity {
+  id           String       @id @default(cuid())
+  name         String       @unique
+  type         EntityType
+  status       EntityStatus @default(ACTIVE)
+  adminUserId  String?      @map("admin_user_id")
+  databaseName String?      @map("database_name")
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
+
+  adminUser            User?                 @relation("entities_admin_user_idTousers", fields: [adminUserId], references: [id])
+  users                User[]                @relation("users_entity_idToentities")
+  patients             Patient[]
+  entityModules        EntityModule[]
+  systemConfigurations SystemConfiguration[]
+
+  @@index([status])
+  @@map("entities")
+}
+
+model Module {
+  id          String       @id @default(cuid())
+  name        String       @unique
+  description String
+  status      ModuleStatus @default(ENABLED)
+  config      Json?
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  entityModules EntityModule[]
+  permissions   Permission[]
+
+  @@map("modules")
+}
+
+// ============================================
+// MODELOS DE CONFIGURACIÓN DEL SISTEMA
+// ============================================
+
+model SystemConfiguration {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  category    String // general, seguridad, notificaciones, sistema, etc.
+  value       Json // Valor de la configuración (puede ser string, number, boolean, object)
+  description String?  @db.Text
+  entityId    String?  @map("entity_id") // Si es configuración específica de entidad
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  entity Entity? @relation(fields: [entityId], references: [id])
+
+  @@index([category])
+  @@index([entityId])
+  @@index([key])
+  @@map("system_configurations")
+}
+
+model EntityModule {
+  id       String  @id @default(cuid())
+  entityId String  @map("entity_id")
+  moduleId String  @map("module_id")
+  enabled  Boolean @default(true)
+  config   Json?
+
+  entity Entity @relation(fields: [entityId], references: [id], onDelete: Cascade)
+  module Module @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  @@unique([entityId, moduleId])
+  @@map("entity_modules")
+}
+
+model Permission {
+  id          String   @id @default(cuid())
+  name        String
+  description String
+  moduleId    String   @map("module_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  module          Module           @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  userPermissions UserPermission[]
+
+  @@unique([moduleId, name])
+  @@map("permissions")
+}
+
+model UserPermission {
+  id           String  @id @default(cuid())
+  userId       String  @map("user_id")
+  permissionId String  @map("permission_id")
+  granted      Boolean @default(true)
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, permissionId])
+  @@map("user_permissions")
+}
+
+enum EntityType {
+  HOSPITAL
+  CLINICA
+  CENTRO_MEDICO
+  LABORATORIO
+}
+
+enum EntityStatus {
+  ACTIVE
+  INACTIVE
+  PENDING
+}
+
+enum ModuleStatus {
+  ENABLED
+  DISABLED
+}
+
 enum UserRole {
-  Administrador
-  Médico
-  Enfermero
-  Paciente
+  SUPER_ADMIN
+  ENTITY_ADMIN
+  MEDICO
+  ENFERMERO
+  PACIENTE
+  USER
+}
+
+// ============================================
+// MODELOS DE PACIENTES
+// ============================================
+
+model Patient {
+  id String @id @default(cuid())
+
+  // Identificación
+  documentType   String? @map("document_type")
+  documentNumber String  @unique @map("document_number")
+  countryOfIssue String? @map("country_of_issue")
+
+  // Datos personales
+  firstName      String   @map("first_name")
+  lastName       String   @map("last_name")
+  secondLastName String?  @map("second_last_name")
+  dateOfBirth    DateTime @map("date_of_birth")
+  age            Int
+  gender         String
+  maritalStatus  String?  @map("marital_status")
+  bloodType      String?  @map("blood_type")
+  occupation     String?
+
+  // Información de contacto
+  mobilePhone          String? @map("mobile_phone")
+  landlinePhone        String? @map("landline_phone")
+  email                String?
+  contactPreference    String? @map("contact_preference")
+  notificationsConsent Boolean @default(true) @map("notifications_consent")
+
+  // Dirección
+  address      String?
+  city         String?
+  department   String?
+  country      String? @default("Colombia")
+  postalCode   String? @map("postal_code")
+  neighborhood String?
+
+  // Contacto de emergencia
+  emergencyContactName         String? @map("emergency_contact_name")
+  emergencyContactPhone        String? @map("emergency_contact_phone")
+  emergencyContactRelationship String? @map("emergency_contact_relationship")
+
+  // Representante legal
+  legalRepresentativeName         String? @map("legal_representative_name")
+  legalRepresentativeDocument     String? @map("legal_representative_document")
+  legalRepresentativePhone        String? @map("legal_representative_phone")
+  legalRepresentativeRelationship String? @map("legal_representative_relationship")
+
+  // Información de seguro
+  insuranceProvider String? @map("insurance_provider")
+  insuranceNumber   String? @map("insurance_number")
+
+  // Información clínica inicial
+  allergies           String?
+  activeProblems      String? @map("active_problems")
+  initialObservations String? @map("initial_observations")
+
+  // Admisión
+  createAdmission Boolean   @default(false) @map("create_admission")
+  admissionDate   DateTime? @map("admission_date")
+  admissionType   String?   @map("admission_type")
+  status          String    @default("ACTIVE")
+
+  // Consentimientos
+  dataProcessingConsent Boolean @default(false) @map("data_processing_consent")
+  medicalConsent        Boolean @default(false) @map("medical_consent")
+  privacyConsent        Boolean @default(false) @map("privacy_consent")
+  communicationConsent  Boolean @default(false) @map("communication_consent")
+
+  // Relaciones
+  entityId          String?            @map("entity_id")
+  entity            Entity?            @relation(fields: [entityId], references: [id])
+  medicalRecords    MedicalRecord[]
+  appointments      Appointment[]
+  patientAdmissions PatientAdmission[]
+  triage            Triage[]
+  triageAssessments TriageAssessment[]
+
+  // Metadatos
+  avatarUrl String?  @map("avatar_url")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([documentNumber])
+  @@index([email])
+  @@index([entityId])
+  @@index([createdAt])
+  @@map("patients")
+}
+
+// ============================================
+// MODELOS DE HISTORIAS CLÍNICAS
+// ============================================
+
+model MedicalRecord {
+  id                    String   @id @default(cuid())
+  patientId             String   @map("patient_id")
+  medicalHistory        String?  @map("medical_history") @db.Text
+  currentStatus         String?  @map("current_status")
+  admissionNumber       String   @unique @map("admission_number")
+  clinicalHistoryNumber String   @unique @map("clinical_history_number")
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  patient    Patient           @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  diagnoses  Diagnosis[]
+  treatments Treatment[]
+  documents  MedicalDocument[]
+
+  @@index([patientId])
+  @@index([createdAt])
+  @@map("medical_records")
+}
+
+model Diagnosis {
+  id              String   @id @default(cuid())
+  medicalRecordId String   @map("medical_record_id")
+  code            String
+  description     String
+  physician       String
+  date            DateTime @default(now())
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  medicalRecord MedicalRecord @relation(fields: [medicalRecordId], references: [id], onDelete: Cascade)
+
+  @@index([medicalRecordId])
+  @@index([code])
+  @@map("diagnoses")
+}
+
+model Treatment {
+  id              String   @id @default(cuid())
+  medicalRecordId String   @map("medical_record_id")
+  procedure       String
+  medication      String?
+  dosage          String?
+  physician       String
+  date            DateTime @default(now())
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  medicalRecord MedicalRecord @relation(fields: [medicalRecordId], references: [id], onDelete: Cascade)
+
+  @@index([medicalRecordId])
+  @@map("treatments")
+}
+
+model MedicalDocument {
+  id              String   @id @default(cuid())
+  medicalRecordId String   @map("medical_record_id")
+  title           String
+  type            String
+  url             String?
+  date            DateTime @default(now())
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  medicalRecord MedicalRecord @relation(fields: [medicalRecordId], references: [id], onDelete: Cascade)
+
+  @@index([medicalRecordId])
+  @@map("medical_documents")
+}
+
+// ============================================
+// MODELOS DE CITAS Y TRIAGE
+// ============================================
+
+model Appointment {
+  id        String   @id @default(cuid())
+  patientId String   @map("patient_id")
+  date      DateTime
+  type      String
+  status    String   @default("PENDING")
+  notes     String?  @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+
+  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@index([patientId])
+  @@index([date])
+  @@index([status])
+  @@map("appointments")
+}
+
+model PatientAdmission {
+  id                      String   @id @default(cuid())
+  patientId               String   @map("patient_id")
+  admissionDate           DateTime @map("admission_date")
+  admissionTime           String   @map("admission_time")
+  priorityAttention       String   @map("priority_attention")
+  observation             String?  @db.Text
+  entity                  String?
+  contract                String?
+  absent                  Boolean  @default(false)
+  responsibleName         String?  @map("responsible_name")
+  responsibleRelationship String?  @map("responsible_relationship")
+  responsiblePhone        String?  @map("responsible_phone")
+  companionName           String?  @map("companion_name")
+  companionAddress        String?  @map("companion_address")
+  companionPhone          String?  @map("companion_phone")
+  bloodPressure           String?  @map("blood_pressure")
+  respiratoryRate         String?  @map("respiratory_rate")
+  temperature             String?
+  heartRate               String?  @map("heart_rate")
+  height                  Float?
+  weight                  Float?
+  bmi                     Float?
+  bsa                     Float?
+  oxygenSaturation        String?  @map("oxygen_saturation")
+  status                  String   @default("ACTIVE")
+  createdAt               DateTime @default(now()) @map("created_at")
+  updatedAt               DateTime @updatedAt @map("updated_at")
+
+  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@index([patientId])
+  @@map("patient_admissions")
+}
+
+model Triage {
+  id                 String   @id @default(cuid())
+  patientId          String?  @map("patient_id")
+  arrivalTime        DateTime @map("arrival_time")
+  vitalSigns         Json?    @map("vital_signs")
+  consciousnessLevel String?  @map("consciousness_level")
+  painLevel          Int?     @map("pain_level")
+  urgencyLevel       String   @map("urgency_level")
+  notes              String?  @db.Text
+  createdAt          DateTime @default(now()) @map("created_at")
+
+  patient Patient? @relation(fields: [patientId], references: [id])
+
+  @@index([patientId])
+  @@index([urgencyLevel])
+  @@map("triage")
+}
+
+model TriageAssessment {
+  id                  String   @id @default(cuid())
+  patientId           String   @map("patient_id")
+  arrivalTime         String   @map("arrival_time")
+  assessmentDate      DateTime @map("assessment_date")
+  assessmentTime      String   @map("assessment_time")
+  bloodPressure       String?  @map("blood_pressure")
+  heartRate           Int?     @map("heartRate")
+  respiratoryRate     Int?     @map("respiratoryRate")
+  temperature         Float?
+  oxygenSaturation    Int?     @map("oxygenSaturation")
+  painLevel           Int      @default(0) @map("pain_level")
+  eyeOpening          Int      @default(4) @map("eye_opening")
+  verbalResponse      Int      @default(5) @map("verbal_response")
+  motorResponse       Int      @default(6) @map("motor_response")
+  glasgowTotal        Int      @default(15) @map("glasgow_total")
+  painLocation        String?  @map("painLocation")
+  painCharacter       String?  @map("painCharacter")
+  painIntensity       Int      @default(0) @map("pain_intensity")
+  painDuration        String?  @map("painDuration")
+  mainSymptom         String?  @map("mainSymptom")
+  symptomDuration     String?  @map("symptomDuration")
+  associatedSymptoms  String?  @map("associatedSymptoms")
+  riskFactors         String[]
+  urgencyLevel        String   @map("urgency_level")
+  triageCategory      String   @map("triage_category")
+  estimatedWaitTime   String   @map("estimated_wait_time")
+  observations        String?  @db.Text
+  recommendations     String?  @db.Text
+  professionalName    String?  @map("professional_name")
+  professionalLicense String?  @map("professional_license")
+  status              String   @default("ACTIVE")
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@index([patientId])
+  @@index([urgencyLevel])
+  @@index([createdAt])
+  @@map("triage_assessments")
 }
