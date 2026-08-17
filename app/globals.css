@@ -140,6 +140,10 @@
   }
 
   /* Submenú blanco (hijos del módulo madre) */
+  .bg-white .nav-item-stitch {
+    @apply gap-2 py-1;
+  }
+
   [data-radix-collapsible-content].bg-white .nav-item-stitch:hover,
   .bg-white .nav-item-stitch:hover {
     background: #f2f8fa;

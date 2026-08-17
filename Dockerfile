@@ -16,7 +16,7 @@ ENV NEXT_PUBLIC_FORCE_SPANISH=true
 ENV NEXT_PUBLIC_DEFAULT_LOCALE=es
 ENV NEXT_PUBLIC_AVAILABLE_LOCALES=es
 # Placeholder para prisma generate en build (no conecta en generate)
-ENV DATABASE_URL="postgresql://build:build@localhost:5432/build"
+ENV DATABASE_URL="mysql://build:build@127.0.0.1:3306/build"
 RUN npx prisma generate && npm run build
 
 FROM node:20-alpine AS runner
@@ -34,22 +34,12 @@ COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder /app/prisma ./prisma
-# Prisma / pg suelen quedar fuera del trace standalone
+# Prisma / mysql2 suelen quedar fuera del trace standalone
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
-COPY --from=builder /app/node_modules/pg ./node_modules/pg
-COPY --from=builder /app/node_modules/pg-cloudflare ./node_modules/pg-cloudflare
-COPY --from=builder /app/node_modules/pg-connection-string ./node_modules/pg-connection-string
-COPY --from=builder /app/node_modules/pg-int8 ./node_modules/pg-int8
-COPY --from=builder /app/node_modules/pg-pool ./node_modules/pg-pool
-COPY --from=builder /app/node_modules/pg-protocol ./node_modules/pg-protocol
-COPY --from=builder /app/node_modules/pg-types ./node_modules/pg-types
-COPY --from=builder /app/node_modules/pgpass ./node_modules/pgpass
-COPY --from=builder /app/node_modules/postgres-array ./node_modules/postgres-array
-COPY --from=builder /app/node_modules/postgres-bytea ./node_modules/postgres-bytea
-COPY --from=builder /app/node_modules/postgres-date ./node_modules/postgres-date
-COPY --from=builder /app/node_modules/postgres-interval ./node_modules/postgres-interval
-COPY --from=builder /app/node_modules/@prisma/adapter-pg ./node_modules/@prisma/adapter-pg
+COPY --from=builder /app/node_modules/mysql2 ./node_modules/mysql2
+COPY --from=builder /app/node_modules/mariadb ./node_modules/mariadb
+COPY --from=builder /app/node_modules/@prisma/adapter-mariadb ./node_modules/@prisma/adapter-mariadb
 COPY --from=builder /app/node_modules/@prisma/driver-adapter-utils ./node_modules/@prisma/driver-adapter-utils
 
 USER nextjs

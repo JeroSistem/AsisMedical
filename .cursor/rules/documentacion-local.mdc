@@ -1,0 +1,11 @@
+---
+description: La carpeta documentacion es solo local. Nunca subirla a GitHub.
+alwaysApply: true
+---
+
+# Documentación solo local
+
+- `documentacion/` es **solo de este equipo**. No se sube a GitHub por ahora.
+- **Nunca** hacer `git add`, commit ni push de `documentacion/` ni de su contenido.
+- No copiar esas guías, imágenes, `archived/` ni `BD_SaludPlus/` al repositorio remoto.
+- Si hay que versionar una nota, pedir confirmación al usuario antes.

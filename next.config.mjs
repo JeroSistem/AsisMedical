@@ -23,15 +23,20 @@ const nextConfig = {
   serverExternalPackages: [
     'rate-limiter-flexible',
     '@prisma/client',
-    '@prisma/adapter-pg',
-    'pg',
+    '.prisma/client',
+    '@prisma/adapter-mariadb',
+    'mariadb',
+    'mysql2',
     'bcryptjs',
     'pino',
     'pino-pretty',
   ],
   experimental: {
-    cpus: 1,
-    webpackMemoryOptimizations: true,
+    // cpus:1 y webpackMemoryOptimizations solo en build (Render).
+    // En Windows/dev dejan Next colgado en "Starting...".
+    ...(process.env.NODE_ENV === 'production'
+      ? { cpus: 1, webpackMemoryOptimizations: true }
+      : {}),
     optimizePackageImports: [
       'lucide-react',
       'recharts',
@@ -65,8 +70,9 @@ const nextConfig = {
         ...config.resolve.fallback,
         '@opentelemetry/api': false,
         '@prisma/client': false,
-        '@prisma/adapter-pg': false,
-        pg: false,
+        '@prisma/adapter-mariadb': false,
+        mariadb: false,
+        mysql2: false,
         bcryptjs: false,
         'rate-limiter-flexible': false,
         fs: false,

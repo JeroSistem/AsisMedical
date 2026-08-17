@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ModulePageLayout, ModuleCard } from '@/components/shared/module-page-layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -11,103 +11,120 @@ import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { useToast } from '@/hooks/use-toast';
-import { 
-  FileText, 
-  Building2, 
-  Calendar, 
-  DollarSign, 
-  Users, 
-  Shield,
-  AlertTriangle,
-  CheckCircle,
+import { toast } from 'sonner';
+import {
+  FileText,
+  Building2,
   Plus,
-  Search,
-  Filter,
-  Download,
-  Upload
 } from 'lucide-react';
+import {
+  createPartnerContract,
+  listPartnerContracts,
+} from '@/lib/actions/entity-contracts';
+
+const emptyForm = () => ({
+  numeroContrato: '',
+  entidad: '',
+  tipoEntidad: '',
+  representanteLegal: '',
+  nit: '',
+  direccion: '',
+  telefono: '',
+  email: '',
+  fechaInicio: '',
+  fechaFin: '',
+  valorContrato: '',
+  moneda: 'COP',
+  tipoContrato: '',
+  serviciosIncluidos: '',
+  exclusiones: '',
+  coberturaGeografica: '',
+  poblacionObjetivo: '',
+  plazoPago: '',
+  formaPago: '',
+  garantias: '',
+  penalizaciones: '',
+  documentosRequeridos: '',
+  observaciones: '',
+  estado: 'activo',
+  activo: true,
+});
+
+type ContractRow = {
+  id: string;
+  numero: string;
+  entidad: string;
+  tipo: string;
+  tipoContrato: string;
+  fechaInicio: string;
+  fechaFin: string;
+  valor: string;
+  moneda: string;
+  estado: string;
+  activo: boolean;
+};
 
 export default function ContratosPage() {
-  const { toast } = useToast();
+  const [contrato, setContrato] = useState(emptyForm());
+  const [contratos, setContratos] = useState<ContractRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
-  // Estados para los campos del formulario
-  const [contrato, setContrato] = useState({
-    // Información básica
-    numeroContrato: '',
-    entidad: '',
-    tipoEntidad: '',
-    representanteLegal: '',
-    nit: '',
-    direccion: '',
-    telefono: '',
-    email: '',
-    
-    // Términos del contrato
-    fechaInicio: '',
-    fechaFin: '',
-    valorContrato: '',
-    moneda: 'COP',
-    tipoContrato: '',
-    
-    // Cobertura
-    serviciosIncluidos: '',
-    exclusiones: '',
-    coberturaGeografica: '',
-    poblacionObjetivo: '',
-    
-    // Condiciones
-    plazoPago: '',
-    formaPago: '',
-    garantias: '',
-    penalizaciones: '',
-    
-    // Documentación
-    documentosRequeridos: '',
-    observaciones: '',
-    
-    // Estado
-    estado: 'activo',
-    activo: true
-  });
-
-  // Estado para la lista de contratos
-  const [contratos, setContratos] = useState([
-    {
-      id: 1,
-      numero: 'CTR-2024-001',
-      entidad: 'EPS Sura',
-      tipo: 'EPS',
-      fechaInicio: '2024-01-01',
-      fechaFin: '2024-12-31',
-      valor: '$500,000,000',
-      estado: 'activo'
-    },
-    {
-      id: 2,
-      numero: 'CTR-2024-002',
-      entidad: 'EPS Famisanar',
-      tipo: 'EPS',
-      fechaInicio: '2024-02-01',
-      fechaFin: '2025-01-31',
-      valor: '$300,000,000',
-      estado: 'activo'
+  const loadContratos = async () => {
+    setLoading(true);
+    try {
+      const res = await listPartnerContracts();
+      if (!res.success) {
+        toast.error(res.error || 'No se pudieron cargar los contratos');
+        setContratos([]);
+        return;
+      }
+      setContratos(res.data || []);
+    } catch {
+      toast.error('Error al cargar contratos');
+      setContratos([]);
+    } finally {
+      setLoading(false);
     }
-  ]);
+  };
+
+  useEffect(() => {
+    loadContratos();
+  }, []);
 
   const handleInputChange = (field: string, value: any) => {
-    setContrato(prev => ({
+    setContrato((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast({
-      title: "Contrato guardado",
-      description: "El contrato se ha guardado exitosamente.",
-    });
+    if (!contrato.numeroContrato.trim() || !contrato.entidad.trim()) {
+      toast.error('Complete número de contrato y entidad');
+      return;
+    }
+    if (!contrato.tipoContrato) {
+      toast.error('Seleccione tipo de contrato: Subsidiado o Contributivo');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const result = await createPartnerContract(contrato);
+      if (!result.success) {
+        toast.error(result.error || 'No se pudo guardar el contrato');
+        return;
+      }
+      toast.success(`Contrato ${result.data?.numero} guardado en la base de datos`);
+      setContrato(emptyForm());
+      await loadContratos();
+    } catch {
+      toast.error('Error al guardar el contrato');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const getEstadoBadge = (estado: string) => {
@@ -123,29 +140,14 @@ export default function ContratosPage() {
     }
   };
 
-  const actions = (
-    <>
-      <Button variant="outline" size="sm">
-        <Download className="w-4 h-4 mr-2" />
-        Exportar
-      </Button>
-      <Button variant="outline" size="sm">
-        <Upload className="w-4 h-4 mr-2" />
-        Importar
-      </Button>
-    </>
-  );
-
   return (
     <ModulePageLayout
       title="Contratos con Entidades"
-      description="Gestión de contratos y convenios con entidades prestadoras de servicios"
-      actions={actions}
+      description="Gestión de contratos y convenios (se guardan en la BD de su institución)"
       maxWidth="7xl"
       showBackButton={true}
     >
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Formulario */}
         <div className="lg:col-span-2">
           <ModuleCard>
             <Card>
@@ -160,7 +162,6 @@ export default function ContratosPage() {
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-6">
-                  {/* Información básica */}
                   <div className="space-y-4">
                     <h3 className="text-lg font-semibold text-gray-900">Información Básica</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -171,6 +172,7 @@ export default function ContratosPage() {
                           value={contrato.numeroContrato}
                           onChange={(e) => handleInputChange('numeroContrato', e.target.value)}
                           placeholder="CTR-2024-001"
+                          required
                         />
                       </div>
                       <div>
@@ -180,6 +182,7 @@ export default function ContratosPage() {
                           value={contrato.entidad}
                           onChange={(e) => handleInputChange('entidad', e.target.value)}
                           placeholder="Nombre de la entidad"
+                          required
                         />
                       </div>
                       <div>
@@ -220,39 +223,38 @@ export default function ContratosPage() {
                           id="telefono"
                           value={contrato.telefono}
                           onChange={(e) => handleInputChange('telefono', e.target.value)}
-                          placeholder="Teléfono de contacto"
+                          placeholder="Teléfono"
                         />
                       </div>
-                    </div>
-                    <div>
-                      <Label htmlFor="direccion">Dirección</Label>
-                      <Input
-                        id="direccion"
-                        value={contrato.direccion}
-                        onChange={(e) => handleInputChange('direccion', e.target.value)}
-                        placeholder="Dirección completa"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="email">Email</Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        value={contrato.email}
-                        onChange={(e) => handleInputChange('email', e.target.value)}
-                        placeholder="correo@entidad.com"
-                      />
+                      <div>
+                        <Label htmlFor="email">Email</Label>
+                        <Input
+                          id="email"
+                          type="email"
+                          value={contrato.email}
+                          onChange={(e) => handleInputChange('email', e.target.value)}
+                          placeholder="correo@entidad.com"
+                        />
+                      </div>
+                      <div className="md:col-span-2">
+                        <Label htmlFor="direccion">Dirección</Label>
+                        <Input
+                          id="direccion"
+                          value={contrato.direccion}
+                          onChange={(e) => handleInputChange('direccion', e.target.value)}
+                          placeholder="Dirección"
+                        />
+                      </div>
                     </div>
                   </div>
 
                   <Separator />
 
-                  {/* Términos del contrato */}
                   <div className="space-y-4">
                     <h3 className="text-lg font-semibold text-gray-900">Términos del Contrato</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <Label htmlFor="fechaInicio">Fecha de Inicio</Label>
+                        <Label htmlFor="fechaInicio">Fecha Inicio</Label>
                         <Input
                           id="fechaInicio"
                           type="date"
@@ -261,7 +263,7 @@ export default function ContratosPage() {
                         />
                       </div>
                       <div>
-                        <Label htmlFor="fechaFin">Fecha de Fin</Label>
+                        <Label htmlFor="fechaFin">Fecha Fin</Label>
                         <Input
                           id="fechaFin"
                           type="date"
@@ -275,7 +277,7 @@ export default function ContratosPage() {
                           id="valorContrato"
                           value={contrato.valorContrato}
                           onChange={(e) => handleInputChange('valorContrato', e.target.value)}
-                          placeholder="0.00"
+                          placeholder="500000000"
                         />
                       </div>
                       <div>
@@ -293,15 +295,16 @@ export default function ContratosPage() {
                       </div>
                       <div>
                         <Label htmlFor="tipoContrato">Tipo de Contrato</Label>
-                        <Select value={contrato.tipoContrato} onValueChange={(value) => handleInputChange('tipoContrato', value)}>
+                        <Select
+                          value={contrato.tipoContrato}
+                          onValueChange={(value) => handleInputChange('tipoContrato', value)}
+                        >
                           <SelectTrigger>
                             <SelectValue placeholder="Seleccionar tipo" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="prestacion-servicios">Prestación de Servicios</SelectItem>
-                            <SelectItem value="compraventa">Compraventa</SelectItem>
-                            <SelectItem value="arrendamiento">Arrendamiento</SelectItem>
-                            <SelectItem value="otro">Otro</SelectItem>
+                            <SelectItem value="subsidiado">Subsidiado</SelectItem>
+                            <SelectItem value="contributivo">Contributivo</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -315,21 +318,28 @@ export default function ContratosPage() {
                           placeholder="30"
                         />
                       </div>
+                      <div>
+                        <Label htmlFor="formaPago">Forma de Pago</Label>
+                        <Input
+                          id="formaPago"
+                          value={contrato.formaPago}
+                          onChange={(e) => handleInputChange('formaPago', e.target.value)}
+                          placeholder="Transferencia, cheque, etc."
+                        />
+                      </div>
                     </div>
                   </div>
 
                   <Separator />
 
-                  {/* Cobertura */}
                   <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-gray-900">Cobertura y Servicios</h3>
+                    <h3 className="text-lg font-semibold text-gray-900">Cobertura</h3>
                     <div>
                       <Label htmlFor="serviciosIncluidos">Servicios Incluidos</Label>
                       <Textarea
                         id="serviciosIncluidos"
                         value={contrato.serviciosIncluidos}
                         onChange={(e) => handleInputChange('serviciosIncluidos', e.target.value)}
-                        placeholder="Describa los servicios incluidos en el contrato"
                         rows={3}
                       />
                     </div>
@@ -339,7 +349,6 @@ export default function ContratosPage() {
                         id="exclusiones"
                         value={contrato.exclusiones}
                         onChange={(e) => handleInputChange('exclusiones', e.target.value)}
-                        placeholder="Describa los servicios excluidos"
                         rows={3}
                       />
                     </div>
@@ -350,7 +359,6 @@ export default function ContratosPage() {
                           id="coberturaGeografica"
                           value={contrato.coberturaGeografica}
                           onChange={(e) => handleInputChange('coberturaGeografica', e.target.value)}
-                          placeholder="Ciudades, regiones, etc."
                         />
                       </div>
                       <div>
@@ -359,7 +367,6 @@ export default function ContratosPage() {
                           id="poblacionObjetivo"
                           value={contrato.poblacionObjetivo}
                           onChange={(e) => handleInputChange('poblacionObjetivo', e.target.value)}
-                          placeholder="Número de beneficiarios"
                         />
                       </div>
                     </div>
@@ -367,16 +374,14 @@ export default function ContratosPage() {
 
                   <Separator />
 
-                  {/* Condiciones adicionales */}
                   <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-gray-900">Condiciones Adicionales</h3>
+                    <h3 className="text-lg font-semibold text-gray-900">Condiciones y Documentación</h3>
                     <div>
                       <Label htmlFor="garantias">Garantías</Label>
                       <Textarea
                         id="garantias"
                         value={contrato.garantias}
                         onChange={(e) => handleInputChange('garantias', e.target.value)}
-                        placeholder="Describa las garantías del contrato"
                         rows={3}
                       />
                     </div>
@@ -386,8 +391,16 @@ export default function ContratosPage() {
                         id="penalizaciones"
                         value={contrato.penalizaciones}
                         onChange={(e) => handleInputChange('penalizaciones', e.target.value)}
-                        placeholder="Describa las penalizaciones por incumplimiento"
                         rows={3}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="documentosRequeridos">Documentos Requeridos</Label>
+                      <Textarea
+                        id="documentosRequeridos"
+                        value={contrato.documentosRequeridos}
+                        onChange={(e) => handleInputChange('documentosRequeridos', e.target.value)}
+                        rows={2}
                       />
                     </div>
                     <div>
@@ -396,7 +409,6 @@ export default function ContratosPage() {
                         id="observaciones"
                         value={contrato.observaciones}
                         onChange={(e) => handleInputChange('observaciones', e.target.value)}
-                        placeholder="Observaciones adicionales"
                         rows={3}
                       />
                     </div>
@@ -404,7 +416,6 @@ export default function ContratosPage() {
 
                   <Separator />
 
-                  {/* Estado */}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
                       <Switch
@@ -415,12 +426,17 @@ export default function ContratosPage() {
                       <Label htmlFor="activo">Contrato Activo</Label>
                     </div>
                     <div className="flex space-x-2">
-                      <Button type="button" variant="outline">
-                        Cancelar
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setContrato(emptyForm())}
+                        disabled={saving}
+                      >
+                        Limpiar
                       </Button>
-                      <Button type="submit">
+                      <Button type="submit" disabled={saving}>
                         <Plus className="w-4 h-4 mr-2" />
-                        Guardar Contrato
+                        {saving ? 'Guardando…' : 'Guardar Contrato'}
                       </Button>
                     </div>
                   </div>
@@ -430,36 +446,57 @@ export default function ContratosPage() {
           </ModuleCard>
         </div>
 
-        {/* Lista de contratos */}
         <div className="lg:col-span-1">
           <ModuleCard>
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <Building2 className="w-5 h-5 mr-2" />
-                  Contratos Activos
+                  Contratos registrados
                 </CardTitle>
                 <CardDescription>
-                  Lista de contratos vigentes
+                  Datos reales de la base de datos de su institución
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {contratos.map((item) => (
-                    <div key={item.id} className="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer">
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-semibold text-sm">{item.numero}</h4>
-                        {getEstadoBadge(item.estado)}
+                {loading ? (
+                  <p className="text-sm text-gray-500">Cargando…</p>
+                ) : contratos.length === 0 ? (
+                  <p className="text-sm text-gray-500">
+                    Aún no hay contratos. Guarde el primero con el formulario.
+                  </p>
+                ) : (
+                  <div className="space-y-4">
+                    {contratos.map((item) => (
+                      <div
+                        key={item.id}
+                        className="p-4 border rounded-lg hover:bg-gray-50"
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="font-semibold text-sm">{item.numero}</h4>
+                          {getEstadoBadge(item.estado)}
+                        </div>
+                        <p className="text-sm text-gray-600 mb-1">{item.entidad}</p>
+                        <p className="text-xs text-gray-500 mb-1">
+                          {item.tipoContrato
+                            ? item.tipoContrato.charAt(0).toUpperCase() +
+                              item.tipoContrato.slice(1)
+                            : item.tipo}
+                        </p>
+                        <div className="flex items-center justify-between text-xs text-gray-500">
+                          <span>
+                            {item.fechaInicio || '—'} - {item.fechaFin || '—'}
+                          </span>
+                          <span className="font-medium">
+                            {item.valor
+                              ? `${item.moneda} ${item.valor}`
+                              : '—'}
+                          </span>
+                        </div>
                       </div>
-                      <p className="text-sm text-gray-600 mb-1">{item.entidad}</p>
-                      <p className="text-xs text-gray-500 mb-2">{item.tipo}</p>
-                      <div className="flex items-center justify-between text-xs text-gray-500">
-                        <span>{item.fechaInicio} - {item.fechaFin}</span>
-                        <span className="font-medium">{item.valor}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </ModuleCard>

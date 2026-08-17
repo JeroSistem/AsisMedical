@@ -17,10 +17,9 @@ interface PatientFormStep2Props {
 }
 
 const genders = [
-  { value: 'male', label: 'Masculino' },
-  { value: 'female', label: 'Femenino' },
-  { value: 'other', label: 'Otro' },
-  { value: 'unknown', label: 'No especificado' }
+  { value: 'masculino', label: 'Masculino' },
+  { value: 'femenino', label: 'Femenino' },
+  { value: 'no definido', label: 'No definido' },
 ];
 
 const maritalStatuses = [

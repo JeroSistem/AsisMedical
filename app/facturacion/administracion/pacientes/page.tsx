@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
+import { List } from 'lucide-react';
 import { ModulePageLayout } from '@/components/shared/module-page-layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,9 +11,29 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
+import { createPatient, type PatientFormData } from '@/lib/actions/patients';
+
+function calcAge(dateOfBirth: string): number {
+  if (!dateOfBirth) return 0;
+  const birth = new Date(dateOfBirth);
+  if (Number.isNaN(birth.getTime())) return 0;
+  const today = new Date();
+  let age = today.getFullYear() - birth.getFullYear();
+  const m = today.getMonth() - birth.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age -= 1;
+  return Math.max(0, age);
+}
+
+function mapSexoToGender(sexo: string): string {
+  if (sexo === 'M') return 'masculino';
+  if (sexo === 'F') return 'femenino';
+  if (sexo === 'I' || sexo === 'N') return 'no definido';
+  return 'no definido';
+}
 
 export default function FacturacionPacientesPage() {
   const { toast } = useToast();
+  const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
     // Información básica
     numeroIdentificacion: '',
@@ -29,11 +51,8 @@ export default function FacturacionPacientesPage() {
     telefono: '',
     departamento: '',
     ciudad: '',
-    nivel: '',
     zonaResidencial: '',
     email: '',
-    codigoPaisResidencia: '170',
-    codigoPaisOrigen: '170',
 
     // Afiliación
     tipoPaciente: '',
@@ -75,13 +94,156 @@ export default function FacturacionPacientesPage() {
 
   const handleChange = (field: string, value: any) => setFormData(prev => ({ ...prev, [field]: value }));
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast({ title: 'Paciente guardado', description: 'Datos del paciente registrados para facturación.' });
+    if (saving) return;
+
+    const doc = formData.numeroIdentificacion.trim();
+    if (!doc || !formData.tipoDocumento || !formData.primerNombre.trim() || !formData.primerApellido.trim() || !formData.fechaNacimiento || !formData.sexo) {
+      toast({
+        title: 'Datos incompletos',
+        description: 'Complete identificación, nombres, fecha de nacimiento y sexo.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const firstName = [formData.primerNombre, formData.segundoNombre]
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .join(' ');
+
+    const extras = [
+      formData.zonaResidencial && `Zona: ${formData.zonaResidencial}`,
+      formData.tipoPaciente && `Tipo paciente: ${formData.tipoPaciente}`,
+      formData.discapacidad && formData.discapacidad !== 'NINGUNA' && `Discapacidad: ${formData.discapacidad}`,
+      formData.grupoEtnico && formData.grupoEtnico !== 'Ninguno' && `Grupo étnico: ${formData.grupoEtnico}`,
+      formData.nivelEducativo && `Nivel educativo: ${formData.nivelEducativo}`,
+      formData.grupoPaciente && `Grupo paciente: ${formData.grupoPaciente}`,
+      formData.observaciones && formData.observaciones,
+    ]
+      .filter(Boolean)
+      .join('\n');
+
+    const payload: PatientFormData = {
+      documentType: formData.tipoDocumento,
+      documentNumber: doc,
+      countryOfIssue: 'CO',
+      firstName,
+      lastName: formData.primerApellido.trim(),
+      secondLastName: formData.segundoApellido.trim() || undefined,
+      dateOfBirth: formData.fechaNacimiento,
+      age: calcAge(formData.fechaNacimiento),
+      gender: mapSexoToGender(formData.sexo),
+      maritalStatus: formData.estadoCivil || undefined,
+      occupation: formData.ocupacion || undefined,
+      mobilePhone: formData.telefono || undefined,
+      email: formData.email || undefined,
+      address: formData.direccion || undefined,
+      city: formData.ciudad || undefined,
+      department: formData.departamento || undefined,
+      country: 'Colombia',
+      insuranceProvider: formData.entidad || undefined,
+      insuranceNumber: formData.tipoAfiliacion || undefined,
+      initialObservations: extras || undefined,
+      notificationsConsent: true,
+      createAdmission: false,
+      dataProcessingConsent: true,
+      medicalConsent: false,
+      privacyConsent: false,
+      communicationConsent: false,
+      // Enfoque diferencial → columnas propias en BD
+      orientacionSexual: formData.orientacionSexual,
+      religion: formData.religion,
+      consumoSpa: formData.consumoSpa,
+      gestacion: formData.gestacion,
+      habitanteCalle: formData.habitanteCalle,
+      resguardoIndigena: formData.resguardoIndigena,
+      victimaConflicto: formData.victimaConflicto,
+      minasAntipersona: formData.minasAntipersona,
+      minasMunicionSinExplotar: formData.minasMunicionSinExplotar,
+      desplazado: formData.desplazado,
+      ruv: formData.ruv,
+      victimaMaltrato: formData.victimaMaltrato,
+      abandonoSocial: formData.abandonoSocial,
+      carcelario: formData.carcelario,
+      poblacionLgbti: formData.poblacionLgbti,
+      desempleado: formData.desempleado,
+      mujerConNinoMenorUnAnio: formData.mujerConNinoMenorUnAnio,
+      adultoMayor: formData.adultoMayor,
+      migrante: formData.migrante,
+      desescolarizado: formData.desescolarizado,
+      trabajadoraSexual: formData.trabajadoraSexual,
+    };
+
+    setSaving(true);
+    try {
+      const result = await Promise.race([
+        createPatient(payload),
+        new Promise<{ success: false; error: string }>((resolve) =>
+          setTimeout(
+            () =>
+              resolve({
+                success: false,
+                error:
+                  'Tiempo de espera agotado. Recargue, inicie sesión de nuevo e intente guardar.',
+              }),
+            25000
+          )
+        ),
+      ]);
+      if (!result.success) {
+        toast({
+          title: 'No se pudo guardar',
+          description: result.error || 'Error al crear el paciente',
+          variant: 'destructive',
+        });
+        return;
+      }
+      toast({
+        title: 'Paciente guardado',
+        description: 'El paciente quedó registrado en la base de datos de la institución.',
+      });
+      setFormData((prev) => ({
+        ...prev,
+        numeroIdentificacion: '',
+        primerNombre: '',
+        segundoNombre: '',
+        primerApellido: '',
+        segundoApellido: '',
+        fechaNacimiento: '',
+        sexo: '',
+        direccion: '',
+        telefono: '',
+        email: '',
+        observaciones: '',
+      }));
+    } catch (err: any) {
+      toast({
+        title: 'Error',
+        description: err?.message || 'Error inesperado al guardar',
+        variant: 'destructive',
+      });
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
-    <ModulePageLayout title="Facturación - Pacientes" description="Registro de pacientes" maxWidth="7xl" showBackButton>
+    <ModulePageLayout
+      title="Facturación - Pacientes"
+      description="Registro de pacientes"
+      maxWidth="7xl"
+      showBackButton
+      actions={
+        <Button asChild variant="outline">
+          <Link href="/facturacion/administracion/pacientes/lista">
+            <List className="mr-2 h-4 w-4" />
+            Lista
+          </Link>
+        </Button>
+      }
+    >
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Información Básica */}
         <Card>
@@ -186,22 +348,6 @@ export default function FacturacionPacientesPage() {
                 <Input value={formData.ciudad} onChange={(e) => handleChange('ciudad', e.target.value)} />
               </div>
               <div>
-                <Label>Nivel</Label>
-                <Select value={formData.nivel} onValueChange={(v) => handleChange('nivel', v)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Seleccionar" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1">1</SelectItem>
-                    <SelectItem value="2">2</SelectItem>
-                    <SelectItem value="3">3</SelectItem>
-                    <SelectItem value="4">4</SelectItem>
-                    <SelectItem value="5">5</SelectItem>
-                    <SelectItem value="6">6</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
                 <Label>Zona residencial</Label>
                 <Select value={formData.zonaResidencial} onValueChange={(v) => handleChange('zonaResidencial', v)}>
                   <SelectTrigger>
@@ -216,14 +362,6 @@ export default function FacturacionPacientesPage() {
               <div className="lg:col-span-2">
                 <Label>Correo electrónico</Label>
                 <Input type="email" value={formData.email} onChange={(e) => handleChange('email', e.target.value)} />
-              </div>
-              <div>
-                <Label>Código País de Residencia</Label>
-                <Input value={formData.codigoPaisResidencia} onChange={(e) => handleChange('codigoPaisResidencia', e.target.value)} />
-              </div>
-              <div>
-                <Label>Código País de Origen</Label>
-                <Input value={formData.codigoPaisOrigen} onChange={(e) => handleChange('codigoPaisOrigen', e.target.value)} />
               </div>
             </div>
           </CardContent>
@@ -565,7 +703,9 @@ export default function FacturacionPacientesPage() {
         </Card>
 
         <div className="flex justify-end">
-          <Button type="submit">Guardar</Button>
+          <Button type="submit" disabled={saving}>
+            {saving ? 'Guardando…' : 'Guardar'}
+          </Button>
         </div>
       </form>
     </ModulePageLayout>

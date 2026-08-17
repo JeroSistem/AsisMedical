@@ -5,8 +5,9 @@ import { useSession } from 'next-auth/react';
 import { useSidebar } from '@/hooks/use-sidebar';
 import { SafeThemeToggle } from '@/components/ui/theme-toggle';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+import { useLogout } from '@/hooks/use-logout';
+import { LogOut } from 'lucide-react';
 import { useAppShell, useSetAppChrome, type AppChromeState } from './app-shell-context';
 
 const CompactModuleNavigationWithSubmodules = lazy(() =>
@@ -44,10 +45,13 @@ function AppLayoutFrame({
   onBack,
   contentClassName,
 }: AppLayoutProps) {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const { sidebarOpen, toggleSidebar, isLargeScreen } = useSidebar();
+  const { handleLogout } = useLogout();
 
   const userRole = (session?.user as { role?: string } | undefined)?.role || 'Administrador';
+  const entityId = (session?.user as { entityId?: string } | undefined)?.entityId || null;
+  const isAuthenticated = status === 'authenticated' && !!session?.user;
 
   const handleBack = () => {
     if (onBack) {
@@ -100,9 +104,30 @@ function AppLayoutFrame({
             Módulos
           </p>
           <Suspense fallback={<NavFallback />}>
-            <CompactModuleNavigationWithSubmodules userRole={userRole} />
+            <CompactModuleNavigationWithSubmodules
+              userRole={userRole}
+              entityId={entityId}
+            />
           </Suspense>
         </div>
+
+        {isAuthenticated && (
+          <div className="shrink-0 border-t border-white/20 p-3">
+            <p className="mb-2 truncate px-1 text-[12px] font-medium text-[#163a47]">
+              {session?.user?.name || 'Usuario'}
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="w-full justify-start gap-2 border-[#7ec9d8]/70 bg-white/80 text-[#163a47] hover:bg-white"
+              onClick={handleLogout}
+            >
+              <LogOut className="h-4 w-4" />
+              Cerrar sesión
+            </Button>
+          </div>
+        )}
       </aside>
 
       {sidebarOpen && !isLargeScreen && (
@@ -122,21 +147,6 @@ function AppLayoutFrame({
           >
             <span className="material-symbols-outlined">menu</span>
           </button>
-
-          <div className="hidden min-w-0 flex-1 items-center gap-2 md:flex">
-            <div className="flex w-full max-w-sm items-center rounded-md border border-slate-200 bg-[#f2f4f6] px-2.5 py-1.5">
-              <span className="material-symbols-outlined mr-2 text-[18px] text-slate-400">
-                search
-              </span>
-              <Input
-                className="h-6 border-0 bg-transparent p-0 text-[13px] shadow-none focus-visible:ring-0"
-                placeholder="Buscar historia, factura o paciente..."
-              />
-              <span className="ml-2 rounded border border-slate-200 px-1 text-[10px] text-slate-400">
-                ⌘K
-              </span>
-            </div>
-          </div>
 
           <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
             {showBackButton && (
@@ -162,6 +172,18 @@ function AppLayoutFrame({
               <span className="material-symbols-outlined">notifications</span>
             </Button>
             <SafeThemeToggle />
+            {isAuthenticated && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="gap-1.5 text-[#45464d]"
+                onClick={handleLogout}
+              >
+                <LogOut className="h-4 w-4" />
+                <span className="hidden sm:inline">Cerrar sesión</span>
+              </Button>
+            )}
           </div>
         </header>
 

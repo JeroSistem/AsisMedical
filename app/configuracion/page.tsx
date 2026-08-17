@@ -191,7 +191,7 @@ export default function ConfiguracionPage() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Base de Datos:</span>
-                  <span className="font-semibold">PostgreSQL 16.9</span>
+                  <span className="font-semibold">MySQL 8.4</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Framework:</span>

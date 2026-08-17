@@ -1,12 +1,27 @@
 'use client';
 
-import { ModulePageLayout, ModuleCard } from '@/components/shared/module-page-layout';
+import { useMemo } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { ModulePageLayout } from '@/components/shared/module-page-layout';
 import { PatientFormSimple } from '@/components/modules/patients/patient-form-simple';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { Suspense } from 'react';
 
-export default function NuevoPacientePage() {
+function NuevoPacienteContent() {
+  const searchParams = useSearchParams();
+
+  const initialData = useMemo(() => {
+    const documentType = searchParams.get('documentType') || '';
+    const documentNumber = searchParams.get('documentNumber') || '';
+    if (!documentType && !documentNumber) return undefined;
+    return {
+      documentType,
+      documentNumber,
+    };
+  }, [searchParams]);
+
   const actions = (
     <Button asChild variant="outline" size="sm">
       <Link href="/patients">
@@ -25,8 +40,16 @@ export default function NuevoPacientePage() {
       showBackButton={true}
     >
       <div className="mx-[20px]">
-        <PatientFormSimple />
+        <PatientFormSimple initialData={initialData} />
       </div>
     </ModulePageLayout>
+  );
+}
+
+export default function NuevoPacientePage() {
+  return (
+    <Suspense fallback={<div className="p-4 text-sm text-muted-foreground">Cargando formulario...</div>}>
+      <NuevoPacienteContent />
+    </Suspense>
   );
 }

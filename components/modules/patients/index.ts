@@ -3,6 +3,8 @@ export { PatientDetailClient } from './patient-detail-client';
 export { PatientViewModal } from './patient-view-modal';
 export { AdvancedSearchModal } from './advanced-search-modal';
 export { PatientFormWrapper } from './patient-form-wrapper';
+export { PatientFormSimple } from './patient-form-simple';
+export { PatientLookupWorkspace } from './patient-lookup-workspace';
 export { PatientFormStep1 } from './patient-form-step1';
 export { PatientFormStep2 } from './patient-form-step2';
 export { PatientFormStep3 } from './patient-form-step3';

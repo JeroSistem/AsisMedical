@@ -11,20 +11,12 @@ const DEFAULT_MODULES = [
     order: 1
   },
   {
-    id: 'pacientes',
-    name: 'Pacientes',
-    description: 'Gestión de pacientes',
-    icon: '👥',
-    status: 'ENABLED',
-    order: 2
-  },
-  {
     id: 'admisiones',
     name: 'Admisiones',
     description: 'Gestión de admisiones hospitalarias',
     icon: '🏥',
     status: 'ENABLED',
-    order: 3
+    order: 2
   },
   {
     id: 'triage',
@@ -32,7 +24,7 @@ const DEFAULT_MODULES = [
     description: 'Evaluación de urgencias',
     icon: '🚨',
     status: 'ENABLED',
-    order: 4
+    order: 3
   },
   {
     id: 'historias',
@@ -40,7 +32,7 @@ const DEFAULT_MODULES = [
     description: 'Gestión de historias médicas',
     icon: '📋',
     status: 'ENABLED',
-    order: 5
+    order: 4
   },
   {
     id: 'citas',
@@ -48,15 +40,15 @@ const DEFAULT_MODULES = [
     description: 'Programación de citas médicas',
     icon: '🗓️',
     status: 'ENABLED',
-    order: 6
+    order: 5
   },
   {
     id: 'admin',
     name: 'Administración',
-    description: 'Configuración del sistema',
+    description: 'Configuración del sistema (incluye Pacientes)',
     icon: '⚙️',
     status: 'ENABLED',
-    order: 7
+    order: 6
   }
 ]
 

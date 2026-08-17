@@ -125,11 +125,7 @@ lib/
 
 ## 🗄️ Persistencia
 
-Esta versión opera en modo demo sin capa de base de datos. Toda la información se genera en memoria para facilitar pruebas de interfaz. Cuando se defina la nueva infraestructura de datos, será necesario:
-
-- Reemplazar los servicios en `lib/` y las rutas de `app/api/` por integraciones reales.
-- Incorporar la conexión a la base de datos elegida (PostgreSQL, MySQL, etc.).
-- Actualizar los scripts de despliegue y variables de entorno correspondientes.
+La aplicación usa **MySQL 8.4** con Prisma. Configura `DATABASE_URL` en `.env.local` (ver `env.example`).
 
 ## 🚨 Seguridad
 

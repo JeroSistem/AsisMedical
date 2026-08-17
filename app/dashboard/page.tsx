@@ -1,3 +1,4 @@
+import { getServerSession } from 'next-auth';
 import { getDashboardStats, testDatabaseConnection } from '@/lib/data';
 import {
   PatientsByGenderChart,
@@ -6,6 +7,9 @@ import {
 } from '@/components/modules/dashboard';
 import { ModulePageLayout, ModuleCard } from '@/components/shared/module-page-layout';
 import { MetricCard } from '@/components/design-system';
+import { authOptions } from '@/lib/auth';
+import { getTenantPrisma } from '@/lib/tenant-prisma';
+import { prisma } from '@/lib/prisma';
 
 const emptyStats = {
   totalPatients: 0,
@@ -16,20 +20,56 @@ const emptyStats = {
   patientsByMonth: [] as Array<{ month: string; count: number }>,
 };
 
+async function getDashboardSubtitle(
+  role?: string,
+  entityId?: string | null
+): Promise<string> {
+  if (entityId) {
+    const entity = await prisma.entity.findUnique({
+      where: { id: entityId },
+      select: { name: true },
+    });
+    return `Panel de control clínico — ${entity?.name ?? 'Institución'}`;
+  }
+
+  if (role === 'SUPER_ADMIN') {
+    return 'Panel de control — Administración de plataforma';
+  }
+
+  return 'Panel de control clínico';
+}
+
 export default async function DashboardPage() {
-  const dbOnline = await testDatabaseConnection();
-  const dashboardStats = dbOnline ? await getDashboardStats() : emptyStats;
+  const session = await getServerSession(authOptions);
+  const role = (session?.user as { role?: string } | undefined)?.role;
+  const entityId = (session?.user as { entityId?: string | null } | undefined)
+    ?.entityId;
+
+  const tenantDb = await getTenantPrisma();
+  const dbOnline = await testDatabaseConnection(tenantDb);
+  const dashboardStats = dbOnline
+    ? await getDashboardStats(tenantDb)
+    : emptyStats;
+  const subtitle = await getDashboardSubtitle(role, entityId);
 
   return (
     <ModulePageLayout
       title="Dashboard central"
-      description="Panel de control clínico — ASIS Medical Head"
+      description={subtitle}
       maxWidth="7xl"
     >
       {!dbOnline && (
         <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-body-sm text-amber-900">
-          No hay conexión con PostgreSQL (<span className="font-mono">localhost:5433</span>). El
-          panel se muestra sin datos. Inicia el servicio de base de datos y recarga la página.
+          No hay conexión con MySQL (<span className="font-mono">127.0.0.1:3306</span>). El
+          panel se muestra sin datos. Inicia el servicio MySQL84 y recarga la página.
+        </div>
+      )}
+
+      {role === 'SUPER_ADMIN' && !entityId && (
+        <div className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-body-sm text-blue-900">
+          Vista de plataforma: métricas clínicas (pacientes, historias) aparecen al
+          ingresar con un usuario de institución. Cada institución tiene su propia base
+          de datos.
         </div>
       )}
 

@@ -6,13 +6,11 @@ export const useLogout = () => {
 
   const handleLogout = async () => {
     try {
-      await signOut({ 
-        callbackUrl: '/login',
-        redirect: true 
-      });
+      await signOut({ redirect: false });
+      router.push('/login');
+      router.refresh();
     } catch (error) {
       console.error('Error al cerrar sesión:', error);
-      // Fallback: redirigir manualmente
       router.push('/login');
     }
   };

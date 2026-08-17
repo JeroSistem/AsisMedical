@@ -12,7 +12,8 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
 import { 
   Save, 
   Trash2, 
@@ -34,7 +35,7 @@ import {
   Calendar,
   Clock as ClockIcon
 } from 'lucide-react';
-import { getPatients } from '@/lib/actions/patients';
+import { searchAdmissionsByQuery } from '@/lib/actions/patient-admissions';
 import { createTriageAssessment } from '@/lib/actions/triage-assessment';
 
 interface Patient {
@@ -159,11 +160,26 @@ const RISK_FACTORS = [
 ];
 
 export default function TriageAssessmentPage() {
+  return (
+    <Suspense fallback={<div className="p-6 text-sm text-muted-foreground">Cargando valoración...</div>}>
+      <TriageAssessmentContent />
+    </Suspense>
+  );
+}
+
+function TriageAssessmentContent() {
   const [isLoading, setIsLoading] = useState(false);
-  const [patients, setPatients] = useState<Patient[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
+  const [statusMessage, setStatusMessage] = useState(
+    'Busque por documento o nombre para cargar el ingreso del paciente.'
+  );
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
+  const [selectedAdmissionId, setSelectedAdmissionId] = useState('');
+  const [selectedAdmissionNumber, setSelectedAdmissionNumber] = useState<number | null>(null);
   const { toast } = useToast();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   // Estado del formulario
   const [formData, setFormData] = useState<TriageAssessmentForm>({
@@ -171,13 +187,13 @@ export default function TriageAssessmentPage() {
     arrivalTime: new Date().toLocaleTimeString('es-CO', { 
       hour: '2-digit', 
       minute: '2-digit',
-      hour12: true 
+      hour12: false 
     }),
     assessmentDate: new Date().toISOString().split('T')[0],
     assessmentTime: new Date().toLocaleTimeString('es-CO', { 
       hour: '2-digit', 
       minute: '2-digit',
-      hour12: true 
+      hour12: false 
     }),
     bloodPressure: '',
     heartRate: '',
@@ -206,37 +222,100 @@ export default function TriageAssessmentPage() {
     professionalLicense: ''
   });
 
-  // Cargar pacientes al montar el componente
+  const applyAdmission = (admission: any) => {
+    const p = admission.patient;
+    if (!p) return;
+    setSelectedPatient({
+      id: p.id,
+      name: `${p.firstName} ${p.lastName}`.trim(),
+      documentNumber: p.documentNumber,
+      documentType: p.documentType || '',
+      age: p.age,
+      gender: p.gender,
+      mobilePhone: p.mobilePhone || '',
+      email: p.email || '',
+    });
+    setSelectedAdmissionId(admission.id);
+    setSelectedAdmissionNumber(
+      admission.admissionNumber != null ? Number(admission.admissionNumber) : null
+    );
+    setFormData((prev) => ({
+      ...prev,
+      patientId: p.id,
+      bloodPressure: admission.bloodPressure || prev.bloodPressure,
+      heartRate: admission.heartRate || prev.heartRate,
+      respiratoryRate: admission.respiratoryRate || prev.respiratoryRate,
+      temperature: admission.temperature || prev.temperature,
+      oxygenSaturation: admission.oxygenSaturation || prev.oxygenSaturation,
+      observations: admission.observation || prev.observations,
+      arrivalTime: admission.admissionTime || prev.arrivalTime,
+    }));
+    setStatusMessage(
+      `Ingreso cargado: ${p.firstName} ${p.lastName} · Admisión ${admission.admissionNumber ?? '—'} · ${p.documentType || 'Doc'} ${p.documentNumber}`
+    );
+  };
+
   useEffect(() => {
-    const loadPatients = async () => {
-      try {
-        const patientsList = await getPatients();
-        setPatients(patientsList);
-      } catch (error) {
-        console.error('Error loading patients:', error);
-        toast({
-          title: "Error",
-          description: "Error al cargar la lista de pacientes",
-          variant: "destructive"
-        });
+    const patientId = searchParams.get('patientId');
+    const q = searchParams.get('q');
+    if (q) setSearchQuery(q);
+    if (!patientId && !q) return;
+    (async () => {
+      const result = await searchAdmissionsByQuery(q || patientId || '');
+      if (result.found && result.admission) {
+        applyAdmission(result.admission);
+      } else if (patientId) {
+        const res = await fetch(`/api/triage`);
+        const json = await res.json();
+        const match = (json.data || []).find((x: any) => x.patientId === patientId);
+        if (match) {
+          setSelectedPatient(match.patient);
+          setFormData((prev) => ({
+            ...prev,
+            patientId: match.patientId,
+            bloodPressure: match.admission?.bloodPressure || '',
+            heartRate: match.admission?.heartRate || '',
+            respiratoryRate: match.admission?.respiratoryRate || '',
+            temperature: match.admission?.temperature || '',
+            oxygenSaturation: match.admission?.oxygenSaturation || '',
+            observations: match.observations || '',
+          }));
+          setStatusMessage(`Ingreso cargado: ${match.patientName}`);
+        }
       }
-    };
-    loadPatients();
-  }, [toast]);
+    })();
+  }, [searchParams]);
+
+  const handlePatientSearch = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    const text = searchQuery.trim();
+    if (!text) {
+      setStatusMessage('Escriba documento o nombre para buscar el ingreso.');
+      return;
+    }
+    setIsSearching(true);
+    try {
+      const result = await searchAdmissionsByQuery(text);
+      if (result.error) {
+        setStatusMessage(result.error);
+        return;
+      }
+      if (result.found && result.admission) {
+        applyAdmission(result.admission);
+        return;
+      }
+      setSelectedPatient(null);
+      setFormData((prev) => ({ ...prev, patientId: '' }));
+      setStatusMessage('No hay ingreso de triage para ese paciente. Regístrelo primero en Ingreso Paciente.');
+    } finally {
+      setIsSearching(false);
+    }
+  };
 
   const handleInputChange = (field: keyof TriageAssessmentForm, value: string | number | string[]) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
-    }));
-  };
-
-  const handlePatientSelect = (patientId: string) => {
-    const patient = patients.find(p => p.id === patientId);
-    setSelectedPatient(patient || null);
-    setFormData(prev => ({
-      ...prev,
-      patientId
     }));
   };
 
@@ -337,12 +416,18 @@ export default function TriageAssessmentPage() {
     setIsLoading(true);
     
     try {
-      const result = await createTriageAssessment(formData);
+      const result = await createTriageAssessment({
+        ...formData,
+        admissionId: selectedAdmissionId || undefined,
+        admissionNumber: selectedAdmissionNumber ?? undefined,
+      });
       
       if (result.success) {
         toast({
           title: "Éxito",
-          description: "Valoración de triage registrada correctamente",
+          description: selectedAdmissionNumber != null
+            ? `Valoración registrada (Admisión ${selectedAdmissionNumber})`
+            : 'Valoración de triage registrada correctamente',
         });
         
         // Redirigir a la lista de triage
@@ -442,36 +527,41 @@ export default function TriageAssessmentPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-blue-700">
                 <User className="h-5 w-5" />
-                Paciente
+                Paciente / Ingreso
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="patient-select">Paciente *</Label>
-                  <div className="relative">
-                    <Select value={formData.patientId} onValueChange={handlePatientSelect}>
-                      <SelectTrigger className="pl-10">
-                        <SelectValue placeholder="Seleccionar paciente..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {patients.map((patient) => (
-                          <SelectItem key={patient.id} value={patient.id}>
-                            {patient.name} - {patient.documentNumber}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  </div>
-                  {selectedPatient && (
-                    <div className="text-sm text-muted-foreground">
-                      {selectedPatient.name} | {selectedPatient.documentType}: {selectedPatient.documentNumber} | 
-                      Edad: {selectedPatient.age} años | Género: {selectedPatient.gender}
-                    </div>
-                  )}
+            <CardContent className="space-y-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+                <div className="min-w-0 flex-1 space-y-2">
+                  <Label htmlFor="patient-search">Buscar por documento o nombre</Label>
+                  <Input
+                    id="patient-search"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        void handlePatientSearch();
+                      }
+                    }}
+                    placeholder="Documento o nombre..."
+                  />
                 </div>
+                <Button type="button" onClick={handlePatientSearch} disabled={isSearching}>
+                  <Search className="mr-2 h-4 w-4" />
+                  {isSearching ? 'Buscando...' : 'Buscar'}
+                </Button>
               </div>
+              <p className="text-sm text-muted-foreground">{statusMessage}</p>
+              {selectedPatient && (
+                <div className="rounded-md border bg-slate-50 px-3 py-2 text-sm">
+                  <strong>{selectedPatient.name}</strong>
+                  {' · '}
+                  {selectedPatient.documentType}: {selectedPatient.documentNumber}
+                  {' · '}
+                  Edad: {selectedPatient.age} · Género: {selectedPatient.gender}
+                </div>
+              )}
             </CardContent>
           </Card>
 

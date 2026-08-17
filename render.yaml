@@ -1,17 +1,6 @@
 # Blueprint Render — la web NO hace `next build` (OOM en plan free).
 # La imagen se construye en GitHub Actions → ghcr.io/jerosistem/asismedical:latest
-#
-# Tras el primer push de imagen:
-# 1. GitHub → Packages → asismedical → Package settings → Change visibility → Public
-#    (o configura credenciales de registro privados en Render)
-# 2. Render Blueprint → Manual Sync / Update
-# 3. (Opcional) Create Deploy Hook y secret RENDER_DEPLOY_HOOK en el repo
-
-databases:
-  - name: asismedical-db
-    plan: free
-    databaseName: asis_medical
-    user: asismedical
+# DATABASE_URL debe ser MySQL/MariaDB (ya no se usa Postgres de Render).
 
 services:
   - type: web
@@ -25,15 +14,12 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
-      # Render inyecta PORT; Next standalone debe escuchar 0.0.0.0
       - key: HOSTNAME
         value: "0.0.0.0"
       - key: NEXT_TELEMETRY_DISABLED
         value: "1"
       - key: DATABASE_URL
-        fromDatabase:
-          name: asismedical-db
-          property: connectionString
+        sync: false
       - key: NEXTAUTH_SECRET
         generateValue: true
       - key: NEXTAUTH_URL

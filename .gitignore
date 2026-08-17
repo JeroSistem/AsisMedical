@@ -46,6 +46,13 @@ next-env.d.ts
 !env.example
 !env.local.example
 
+# Credenciales locales (NO subir a git)
+CREDENTIALES.local.md
+CREDENTIALS.local.md
+
+# Documentación local (NO subir a GitHub)
+/documentacion/
+
 # firebase
 firebase-debug.log
 firestore-debug.log

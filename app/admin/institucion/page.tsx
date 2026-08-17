@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ModulePageLayout, ModuleCard } from '@/components/shared/module-page-layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Upload, Save, Building2, User, Calculator, FileText, Settings } from 'lucide-react';
 import { toast } from 'sonner';
+import {
+  getMyInstitution,
+  getMyInstitutionExtras,
+  updateMyInstitution,
+} from '@/lib/actions/my-institution';
 
 interface InstitutionFormData {
   // Información Institucional
@@ -74,6 +79,8 @@ interface InstitutionFormData {
 }
 
 export default function InstitutionPage() {
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState<InstitutionFormData>({
     // Información Institucional
     institutionName: '',
@@ -134,6 +141,89 @@ export default function InstitutionPage() {
     paramEditWindow: 24,
   });
 
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      try {
+        const [inst, extrasRes] = await Promise.all([
+          getMyInstitution(),
+          getMyInstitutionExtras(),
+        ]);
+        if (cancelled) return;
+        if (!inst.success || !inst.data) {
+          toast.error(inst.error || 'No se pudieron cargar los datos de la institución');
+          return;
+        }
+        const extras = extrasRes.data || {};
+        const typeLower = String(inst.data.type || 'HOSPITAL').toLowerCase();
+        setFormData((prev) => ({
+          ...prev,
+          institutionName: inst.data!.name || '',
+          institutionNIT: inst.data!.nit || '',
+          institutionType:
+            typeLower === 'clinic'
+              ? 'clinic'
+              : typeLower === 'ips'
+                ? 'ips'
+                : typeLower === 'other'
+                  ? 'other'
+                  : 'hospital',
+          institutionDepartment: inst.data!.department || '',
+          institutionCity: inst.data!.city || '',
+          institutionPhone: inst.data!.phone || '',
+          institutionEmail: inst.data!.email || '',
+          institutionAddress: String(extras.address || ''),
+          institutionWebsite: String(extras.website || ''),
+          institutionCode: String(extras.code || ''),
+          legalTitle: String(extras.legalTitle || prev.legalTitle),
+          legalName: String(extras.legalName || inst.data!.adminName || ''),
+          legalId: String(extras.legalId || ''),
+          legalPosition: String(extras.legalPosition || ''),
+          legalEmail: String(extras.legalEmail || inst.data!.email || ''),
+          legalPhone: String(extras.legalPhone || inst.data!.phone || ''),
+          accountEmergency: String(extras.accountEmergency || ''),
+          accountReceiptDebit: String(extras.accountReceiptDebit || ''),
+          accountReceiptCredit: String(extras.accountReceiptCredit || ''),
+          accountCopays: String(extras.accountCopays || ''),
+          accountModeratingFee: String(extras.accountModeratingFee || ''),
+          accountDiscounts: String(extras.accountDiscounts || ''),
+          accountVAT: String(extras.accountVAT || ''),
+          accountDonations: String(extras.accountDonations || ''),
+          costCenterEmergency: String(extras.costCenterEmergency || ''),
+          serviceCenterEmergency: String(extras.serviceCenterEmergency || ''),
+          costCenterDentistry: String(extras.costCenterDentistry || ''),
+          serviceCenterDentistry: String(extras.serviceCenterDentistry || ''),
+          costCenterPediatrics: String(extras.costCenterPediatrics || ''),
+          costCenterSurgery: String(extras.costCenterSurgery || ''),
+          docReceipts: String(extras.docReceipts || ''),
+          docInvoicesPosted: String(extras.docInvoicesPosted || ''),
+          docInvoicesPending: String(extras.docInvoicesPending || ''),
+          docPurchases: String(extras.docPurchases || ''),
+          docInventoryIn: String(extras.docInventoryIn || ''),
+          docInventoryOut: String(extras.docInventoryOut || ''),
+          docAmbulatoryDelivery: String(extras.docAmbulatoryDelivery || ''),
+          paramBudgetItem: String(extras.paramBudgetItem || ''),
+          paramLockHours: Number(extras.paramLockHours || 24),
+          paramPaymentOrders: String(extras.paramPaymentOrders || ''),
+          paramPYM202: String(extras.paramPYM202 || ''),
+          paramMandatoryAccounts: String(extras.paramMandatoryAccounts || ''),
+          paramAppointmentReminder: String(
+            extras.paramAppointmentReminder || 'none'
+          ),
+          paramEditWindow: Number(extras.paramEditWindow || 24),
+        }));
+      } catch {
+        if (!cancelled) toast.error('Error al cargar la institución');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const handleInputChange = (field: keyof InstitutionFormData, value: string | number | File | null) => {
     setFormData(prev => ({
       ...prev,
@@ -150,45 +240,99 @@ export default function InstitutionPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Validar campos obligatorios
-    const requiredFields = [
-      'institutionName', 'institutionNIT', 'institutionCode', 'institutionAddress',
-      'institutionDepartment', 'institutionCity', 'institutionPhone', 'institutionEmail',
-      'legalName', 'legalId', 'legalPosition'
-    ];
 
-    const missingFields = requiredFields.filter(field => !formData[field as keyof InstitutionFormData]);
-    
-    if (missingFields.length > 0) {
-      toast.error('Por favor complete todos los campos obligatorios');
+    if (
+      !formData.institutionName.trim() ||
+      !formData.institutionNIT.trim() ||
+      !formData.institutionDepartment.trim() ||
+      !formData.institutionCity.trim() ||
+      !formData.institutionPhone.trim()
+    ) {
+      toast.error('Complete nombre, NIT, departamento, ciudad y teléfono');
       return;
     }
 
+    setSaving(true);
     try {
-      // Aquí iría la lógica para enviar los datos al servidor
-      console.log('Datos del formulario:', formData);
-      toast.success('Configuración guardada correctamente');
-    } catch (error) {
+      const result = await updateMyInstitution({
+        name: formData.institutionName,
+        nit: formData.institutionNIT,
+        city: formData.institutionCity,
+        department: formData.institutionDepartment,
+        phone: formData.institutionPhone,
+        type: formData.institutionType,
+        email: formData.institutionEmail,
+        address: formData.institutionAddress,
+        website: formData.institutionWebsite,
+        code: formData.institutionCode,
+        extras: {
+          legalTitle: formData.legalTitle,
+          legalName: formData.legalName,
+          legalId: formData.legalId,
+          legalPosition: formData.legalPosition,
+          legalEmail: formData.legalEmail,
+          legalPhone: formData.legalPhone,
+          accountEmergency: formData.accountEmergency,
+          accountReceiptDebit: formData.accountReceiptDebit,
+          accountReceiptCredit: formData.accountReceiptCredit,
+          accountCopays: formData.accountCopays,
+          accountModeratingFee: formData.accountModeratingFee,
+          accountDiscounts: formData.accountDiscounts,
+          accountVAT: formData.accountVAT,
+          accountDonations: formData.accountDonations,
+          costCenterEmergency: formData.costCenterEmergency,
+          serviceCenterEmergency: formData.serviceCenterEmergency,
+          costCenterDentistry: formData.costCenterDentistry,
+          serviceCenterDentistry: formData.serviceCenterDentistry,
+          costCenterPediatrics: formData.costCenterPediatrics,
+          costCenterSurgery: formData.costCenterSurgery,
+          docReceipts: formData.docReceipts,
+          docInvoicesPosted: formData.docInvoicesPosted,
+          docInvoicesPending: formData.docInvoicesPending,
+          docPurchases: formData.docPurchases,
+          docInventoryIn: formData.docInventoryIn,
+          docInventoryOut: formData.docInventoryOut,
+          docAmbulatoryDelivery: formData.docAmbulatoryDelivery,
+          paramBudgetItem: formData.paramBudgetItem,
+          paramLockHours: formData.paramLockHours,
+          paramPaymentOrders: formData.paramPaymentOrders,
+          paramPYM202: formData.paramPYM202,
+          paramMandatoryAccounts: formData.paramMandatoryAccounts,
+          paramAppointmentReminder: formData.paramAppointmentReminder,
+          paramEditWindow: formData.paramEditWindow,
+        },
+      });
+
+      if (!result.success) {
+        toast.error(result.error || 'No se pudo guardar');
+        return;
+      }
+      toast.success('Datos de la institución guardados');
+    } catch {
       toast.error('Error al guardar la configuración');
+    } finally {
+      setSaving(false);
     }
   };
 
   const actions = (
-    <Button type="submit" form="institution-form">
+    <Button type="submit" form="institution-form" disabled={saving || loading}>
       <Save className="h-4 w-4 mr-2" />
-      Guardar Configuración
+      {saving ? 'Guardando…' : 'Guardar Configuración'}
     </Button>
   );
 
   return (
     <ModulePageLayout
       title="Configuración de Institución"
-      description="Administre la información de la institución médica"
+      description="Datos de su institución (prellenados desde el alta en plataforma)"
       actions={actions}
       maxWidth="7xl"
       showBackButton={true}
     >
+      {loading ? (
+        <p className="text-sm text-gray-500 py-8">Cargando datos de la institución…</p>
+      ) : (
       <form id="institution-form" onSubmit={handleSubmit} className="space-y-6">
         {/* Sección 1: Información Institucional */}
         <ModuleCard>
@@ -212,6 +356,7 @@ export default function InstitutionPage() {
                   onChange={(e) => handleInputChange('institutionName', e.target.value)}
                   placeholder="Nombre de la institución"
                   required
+                  className="bg-slate-50"
                 />
               </div>
 
@@ -226,6 +371,7 @@ export default function InstitutionPage() {
                   onChange={(e) => handleInputChange('institutionNIT', e.target.value)}
                   placeholder="NIT de la institución"
                   required
+                  className="bg-slate-50"
                 />
               </div>
 
@@ -814,6 +960,7 @@ export default function InstitutionPage() {
           </CardContent>
         </ModuleCard>
       </form>
+      )}
     </ModulePageLayout>
   );
 }

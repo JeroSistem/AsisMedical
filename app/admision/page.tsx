@@ -1,102 +1,133 @@
 "use client";
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import { AppLayout } from '@/components/shared';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Search, Bed, User, CheckCircle, Clock, AlertTriangle } from 'lucide-react';
+import { Plus, Search, Bed, User, CheckCircle, Clock } from 'lucide-react';
+import { getPatientAdmissions } from '@/lib/actions/patient-admissions';
 
-// Datos de ejemplo para admisión
-const mockAdmissions = [
-  {
-    id: 1,
-    patientName: "Juan Pérez",
-    roomNumber: "101",
-    bedNumber: "A",
-    admissionDate: "2024-01-15",
-    dischargeDate: null,
-    status: "admitted",
-    doctorName: "Dr. Ana Martínez",
-    diagnosis: "Neumonía"
-  },
-  {
-    id: 2,
-    patientName: "María García",
-    roomNumber: "205",
-    bedNumber: "B",
-    admissionDate: "2024-01-14",
-    dischargeDate: "2024-01-16",
-    status: "discharged",
-    doctorName: "Dr. Carlos Rodríguez",
-    diagnosis: "Apendicitis"
-  },
-  {
-    id: 3,
-    patientName: "Carlos López",
-    roomNumber: "103",
-    bedNumber: "A",
-    admissionDate: "2024-01-15",
-    dischargeDate: null,
-    status: "pending",
-    doctorName: "Dr. Ana Martínez",
-    diagnosis: "Fractura de fémur"
-  }
-];
-
-const statusColors = {
-  admitted: "bg-blue-100 text-blue-800",
-  discharged: "bg-green-100 text-green-800",
-  pending: "bg-yellow-100 text-yellow-800",
-  transferred: "bg-purple-100 text-purple-800"
+type AdmissionRow = {
+  id: string;
+  admissionNumber: number;
+  patientName: string;
+  documentNumber: string;
+  admissionDate: string;
+  admissionTime: string | null;
+  status: string;
+  priorityAttention: string | null;
+  observation: string | null;
 };
 
-const statusLabels = {
-  admitted: "Admitido",
-  discharged: "Dado de Alta",
-  pending: "Pendiente",
-  transferred: "Transferido"
+const statusColors: Record<string, string> = {
+  ACTIVE: 'bg-blue-100 text-blue-800',
+  admitted: 'bg-blue-100 text-blue-800',
+  DISCHARGED: 'bg-green-100 text-green-800',
+  discharged: 'bg-green-100 text-green-800',
+  PENDING: 'bg-yellow-100 text-yellow-800',
+  pending: 'bg-yellow-100 text-yellow-800',
 };
+
+const statusLabels: Record<string, string> = {
+  ACTIVE: 'Activa',
+  admitted: 'Admitido',
+  DISCHARGED: 'Dado de Alta',
+  discharged: 'Dado de Alta',
+  PENDING: 'Pendiente',
+  pending: 'Pendiente',
+};
+
+function formatDate(value: Date | string | null | undefined) {
+  if (!value) return '—';
+  const d = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(d.getTime())) return '—';
+  return d.toISOString().slice(0, 10);
+}
+
+function patientFullName(patient: any) {
+  if (!patient) return 'Paciente';
+  return `${patient.firstName || ''} ${patient.lastName || ''} ${patient.secondLastName || ''}`.trim();
+}
 
 export default function AdmisionPage() {
   const [searchTerm, setSearchTerm] = useState('');
+  const [admissions, setAdmissions] = useState<AdmissionRow[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const filteredAdmissions = mockAdmissions.filter(admission =>
-    admission.patientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    admission.roomNumber.includes(searchTerm) ||
-    admission.doctorName.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      try {
+        const rows = await getPatientAdmissions();
+        if (cancelled) return;
+        setAdmissions(
+          (rows || []).map((a: any) => ({
+            id: a.id,
+            admissionNumber: a.admissionNumber,
+            patientName: patientFullName(a.patient),
+            documentNumber: a.patient?.documentNumber || '—',
+            admissionDate: formatDate(a.admissionDate),
+            admissionTime: a.admissionTime || null,
+            status: a.status || 'ACTIVE',
+            priorityAttention: a.priorityAttention || null,
+            observation: a.observation || null,
+          }))
+        );
+      } catch {
+        if (!cancelled) setAdmissions([]);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
-  const totalAdmissions = mockAdmissions.length;
-  const currentAdmissions = mockAdmissions.filter(a => a.status === 'admitted').length;
-  const pendingAdmissions = mockAdmissions.filter(a => a.status === 'pending').length;
-  const dischargedToday = mockAdmissions.filter(a => 
-    a.status === 'discharged' && a.dischargeDate === new Date().toISOString().split('T')[0]
+  const filteredAdmissions = useMemo(() => {
+    const q = searchTerm.trim().toLowerCase();
+    if (!q) return admissions;
+    return admissions.filter(
+      (admission) =>
+        admission.patientName.toLowerCase().includes(q) ||
+        admission.documentNumber.toLowerCase().includes(q) ||
+        String(admission.admissionNumber).includes(q) ||
+        (admission.observation || '').toLowerCase().includes(q)
+    );
+  }, [admissions, searchTerm]);
+
+  const totalAdmissions = admissions.length;
+  const currentAdmissions = admissions.filter((a) =>
+    ['ACTIVE', 'admitted'].includes(a.status)
   ).length;
+  const pendingAdmissions = admissions.filter((a) =>
+    ['PENDING', 'pending'].includes(a.status)
+  ).length;
+  const today = new Date().toISOString().slice(0, 10);
+  const admittedToday = admissions.filter((a) => a.admissionDate === today).length;
 
   return (
     <AppLayout>
       <div className="space-y-6">
-        {/* Header */}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Admisión</h1>
-            <p className="text-gray-600 mt-1">Gestión de admisiones y camas</p>
+            <p className="text-gray-600 mt-1">Gestión de admisiones</p>
           </div>
           <div className="flex space-x-2">
-            <Button variant="outline" className="flex items-center gap-2">
-              <Bed className="h-4 w-4" />
-              Ver Camas
-            </Button>
-            <Button className="flex items-center gap-2">
-              <Plus className="h-4 w-4" />
-              Nueva Admisión
+            <Button asChild className="flex items-center gap-2">
+              <Link href="/admision/nueva">
+                <Plus className="h-4 w-4" />
+                Nueva Admisión
+              </Link>
             </Button>
           </div>
         </div>
 
-        {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card>
             <CardContent className="p-4">
@@ -109,7 +140,7 @@ export default function AdmisionPage() {
               </div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center space-x-2">
@@ -121,7 +152,7 @@ export default function AdmisionPage() {
               </div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center space-x-2">
@@ -133,98 +164,115 @@ export default function AdmisionPage() {
               </div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center space-x-2">
                 <CheckCircle className="h-8 w-8 text-purple-600" />
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Altas Hoy</p>
-                  <p className="text-2xl font-bold text-gray-900">{dischargedToday}</p>
+                  <p className="text-sm font-medium text-gray-600">Ingresos Hoy</p>
+                  <p className="text-2xl font-bold text-gray-900">{admittedToday}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Search and Filters */}
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center space-x-4">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input
-                  placeholder="Buscar admisiones por paciente, habitación o doctor..."
+                  placeholder="Buscar por paciente, documento o número de admisión..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
                 />
               </div>
-              <Button variant="outline">Filtros</Button>
             </div>
           </CardContent>
         </Card>
 
-        {/* Admissions List */}
         <Card>
           <CardHeader>
             <CardTitle>Lista de Admisiones</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {filteredAdmissions.map((admission) => (
-                <div
-                  key={admission.id}
-                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  <div className="flex items-center space-x-4">
-                    <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                      <Bed className="h-6 w-6 text-blue-600" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2 mb-1">
-                        <h3 className="font-semibold text-gray-900">{admission.patientName}</h3>
-                        <Badge className={statusColors[admission.status as keyof typeof statusColors]}>
-                          {statusLabels[admission.status as keyof typeof statusLabels]}
-                        </Badge>
+            {loading ? (
+              <div className="py-8 text-center text-gray-600">Cargando admisiones…</div>
+            ) : (
+              <div className="space-y-4">
+                {filteredAdmissions.map((admission) => (
+                  <div
+                    key={admission.id}
+                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    <div className="flex items-center space-x-4">
+                      <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                        <Bed className="h-6 w-6 text-blue-600" />
                       </div>
-                      <p className="text-sm text-gray-600">
-                        Habitación: {admission.roomNumber} - Cama: {admission.bedNumber}
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        Doctor: {admission.doctorName} | Diagnóstico: {admission.diagnosis}
-                      </p>
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2 mb-1">
+                          <h3 className="font-semibold text-gray-900">
+                            #{admission.admissionNumber} · {admission.patientName}
+                          </h3>
+                          <Badge
+                            className={
+                              statusColors[admission.status] || 'bg-gray-100 text-gray-800'
+                            }
+                          >
+                            {statusLabels[admission.status] || admission.status}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-gray-600">
+                          Documento: {admission.documentNumber}
+                        </p>
+                        {admission.observation && (
+                          <p className="text-sm text-gray-500">{admission.observation}</p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <div className="text-right">
+                        <p className="text-sm text-gray-600">Admisión</p>
+                        <p className="text-sm font-medium text-gray-900">
+                          {admission.admissionDate}
+                          {admission.admissionTime ? ` · ${admission.admissionTime}` : ''}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <div className="text-right">
-                      <p className="text-sm text-gray-600">Admisión</p>
-                      <p className="text-sm font-medium text-gray-900">{admission.admissionDate}</p>
-                      {admission.dischargeDate && (
-                        <>
-                          <p className="text-sm text-gray-600">Alta</p>
-                          <p className="text-sm font-medium text-gray-900">{admission.dischargeDate}</p>
-                        </>
-                      )}
+                ))}
+
+                {filteredAdmissions.length === 0 && (
+                  <div className="text-center py-8 space-y-4">
+                    <Bed className="h-12 w-12 text-gray-400 mx-auto" />
+                    <div>
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">
+                        No hay admisiones
+                      </h3>
+                      <p className="text-gray-600">
+                        {searchTerm.trim()
+                          ? 'No hay coincidencias con la búsqueda.'
+                          : 'Esta institución aún no tiene ingresos registrados'}
+                      </p>
                     </div>
-                    <Button variant="outline" size="sm">
-                      Ver Detalles
-                    </Button>
+                    {!searchTerm.trim() && (
+                      <Button asChild>
+                        <Link href="/admision/nueva">
+                          <Plus className="h-4 w-4 mr-2" />
+                          Nueva Admisión
+                        </Link>
+                      </Button>
+                    )}
                   </div>
-                </div>
-              ))}
-              
-              {filteredAdmissions.length === 0 && (
-                <div className="text-center py-8">
-                  <Bed className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No se encontraron admisiones</h3>
-                  <p className="text-gray-600">Intenta ajustar los filtros de búsqueda</p>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
     </AppLayout>
   );
-} 
+}

@@ -53,6 +53,17 @@ export const MODULES_CONFIG: Record<ModuleType, ModuleConfig> = {
     roles: ['Administrador'],
     isActive: true,
   },
+  plataforma: {
+    id: 'plataforma',
+    title: 'Plataforma',
+    description: 'Administración exclusiva del dueño de la plataforma',
+    icon: '🛡️',
+    color: 'bg-slate-700',
+    href: '/plataforma/usuarios-principales',
+    requiresAuth: true,
+    roles: ['Administrador'],
+    isActive: true,
+  },
   // Mantener clave para cumplir tipos, pero desactivada
   facturacion: {
     id: 'facturacion',
@@ -278,6 +289,26 @@ export const MAIN_NAVIGATION: NavigationItem[] = [
     ],
   },
   {
+    id: 'plataforma',
+    title: 'Plataforma',
+    href: '/plataforma/usuarios-principales',
+    icon: '🛡️',
+    description: 'Módulo exclusivo del administrador principal',
+    requiresAuth: true,
+    roles: ['Administrador'],
+    children: [
+      {
+        id: 'plataforma-usuarios-principales',
+        title: 'Usuarios principales',
+        href: '/plataforma/usuarios-principales',
+        icon: '👤',
+        description: 'Crear y gestionar el admin principal de cada entidad contratada',
+        requiresAuth: true,
+        roles: ['Administrador'],
+      },
+    ],
+  },
+  {
     id: 'configuracion',
     title: 'Configuración General',
     href: '/configuracion',
@@ -329,56 +360,13 @@ export const MAIN_NAVIGATION: NavigationItem[] = [
     ],
   },
   {
-    id: 'patients',
-    title: 'Pacientes',
-    href: '/patients',
-    icon: '👥',
-    description: 'Gestión de pacientes',
-    requiresAuth: true,
-    roles: ['Administrador', 'Médico', 'Enfermero'],
-    children: [
-      {
-        id: 'patients-lista',
-        title: 'Lista de Pacientes',
-        href: '/patients',
-        icon: '📋',
-        requiresAuth: true,
-        roles: ['Administrador', 'Médico', 'Enfermero'],
-      },
-      {
-        id: 'patients-nuevo',
-        title: 'Nuevo Paciente',
-        href: '/patients/nuevo',
-        icon: '➕',
-        requiresAuth: true,
-        roles: ['Administrador', 'Médico', 'Enfermero'],
-      },
-      {
-        id: 'patients-busqueda',
-        title: 'Búsqueda Avanzada',
-        href: '/patients/busqueda',
-        icon: '🔍',
-        requiresAuth: true,
-        roles: ['Administrador', 'Médico', 'Enfermero'],
-      },
-      {
-        id: 'patients-importar',
-        title: 'Importar Pacientes',
-        href: '/patients/importar',
-        icon: '📥',
-        requiresAuth: true,
-        roles: ['Administrador'],
-      },
-    ],
-  },
-  {
     id: 'admin',
     title: 'Administración',
     href: '/admin',
     icon: '⚙️',
     description: 'Configuración del sistema',
     requiresAuth: true,
-    roles: ['Administrador'],
+    roles: ['Administrador', 'Médico', 'Enfermero'],
     children: [
       {
         id: 'admin-institucion',
@@ -397,8 +385,17 @@ export const MAIN_NAVIGATION: NavigationItem[] = [
         roles: ['Administrador'],
       },
       {
+        id: 'admin-pacientes',
+        title: 'Pacientes',
+        href: '/patients',
+        icon: '👥',
+        description: 'Formulario de pacientes',
+        requiresAuth: true,
+        roles: ['Administrador', 'Médico', 'Enfermero'],
+      },
+      {
         id: 'admin-roles',
-        title: 'Roles y Permisos',
+        title: 'Perfiles',
         href: '/admin/roles',
         icon: '🔐',
         requiresAuth: true,
@@ -704,7 +701,16 @@ export const MAIN_NAVIGATION: NavigationItem[] = [
         href: '/historias/historia-clinica',
         icon: '📋',
         requiresAuth: true,
-        roles: ['Médico', 'Enfermero'],
+        // ENTITY_ADMIN se normaliza a Administrador; si no está aquí, el menú padre se oculta
+        roles: ['Administrador', 'Médico', 'Enfermero'],
+      },
+      {
+        id: 'historias-listado',
+        title: 'Listado de historias',
+        href: '/historias/listado',
+        icon: '📑',
+        requiresAuth: true,
+        roles: ['Administrador', 'Médico', 'Enfermero'],
       },
       {
         id: 'historias-remisiones',
@@ -712,7 +718,7 @@ export const MAIN_NAVIGATION: NavigationItem[] = [
         href: '/historias/remisiones',
         icon: '📤',
         requiresAuth: true,
-        roles: ['Médico', 'Enfermero'],
+        roles: ['Administrador', 'Médico', 'Enfermero'],
       },
       {
         id: 'historias-paquetes-medicamentos',
@@ -720,7 +726,7 @@ export const MAIN_NAVIGATION: NavigationItem[] = [
         href: '/historias/paquetes-medicamentos',
         icon: '💊',
         requiresAuth: true,
-        roles: ['Médico', 'Enfermero'],
+        roles: ['Administrador', 'Médico', 'Enfermero'],
       },
       {
         id: 'historias-paquetes-procedimientos',
@@ -728,7 +734,7 @@ export const MAIN_NAVIGATION: NavigationItem[] = [
         href: '/historias/paquetes-procedimientos',
         icon: '🔬',
         requiresAuth: true,
-        roles: ['Médico', 'Enfermero'],
+        roles: ['Administrador', 'Médico', 'Enfermero'],
       },
       {
         id: 'historias-partograma',
@@ -736,7 +742,7 @@ export const MAIN_NAVIGATION: NavigationItem[] = [
         href: '/historias/partograma',
         icon: '👶',
         requiresAuth: true,
-        roles: ['Médico', 'Enfermero'],
+        roles: ['Administrador', 'Médico', 'Enfermero'],
       },
       {
         id: 'historias-evolucion-ambulatoria',
@@ -744,7 +750,7 @@ export const MAIN_NAVIGATION: NavigationItem[] = [
         href: '/historias/evolucion-ambulatoria',
         icon: '🏥',
         requiresAuth: true,
-        roles: ['Médico', 'Enfermero'],
+        roles: ['Administrador', 'Médico', 'Enfermero'],
       },
       {
         id: 'historias-informe',
@@ -752,7 +758,7 @@ export const MAIN_NAVIGATION: NavigationItem[] = [
         href: '/historias/informe',
         icon: '📊',
         requiresAuth: true,
-        roles: ['Médico', 'Enfermero'],
+        roles: ['Administrador', 'Médico', 'Enfermero'],
         children: [
           {
             id: 'historias-informe-listado-historias',
@@ -760,7 +766,7 @@ export const MAIN_NAVIGATION: NavigationItem[] = [
             href: '/historias/informe/listado-historias',
             icon: '📋',
             requiresAuth: true,
-            roles: ['Médico', 'Enfermero'],
+            roles: ['Administrador', 'Médico', 'Enfermero'],
           },
           {
             id: 'historias-informe-listado-cronicos',
@@ -768,7 +774,7 @@ export const MAIN_NAVIGATION: NavigationItem[] = [
             href: '/historias/informe/listado-cronicos',
             icon: '📋',
             requiresAuth: true,
-            roles: ['Médico', 'Enfermero'],
+            roles: ['Administrador', 'Médico', 'Enfermero'],
           },
           {
             id: 'historias-informe-listado-remisiones',
@@ -776,7 +782,7 @@ export const MAIN_NAVIGATION: NavigationItem[] = [
             href: '/historias/informe/listado-remisiones',
             icon: '📤',
             requiresAuth: true,
-            roles: ['Médico', 'Enfermero'],
+            roles: ['Administrador', 'Médico', 'Enfermero'],
           },
           {
             id: 'historias-informe-listado-prenatal',
@@ -784,7 +790,7 @@ export const MAIN_NAVIGATION: NavigationItem[] = [
             href: '/historias/informe/listado-prenatal',
             icon: '🤰',
             requiresAuth: true,
-            roles: ['Médico', 'Enfermero'],
+            roles: ['Administrador', 'Médico', 'Enfermero'],
           },
           {
             id: 'historias-informe-listado-evoluciones',
@@ -792,7 +798,7 @@ export const MAIN_NAVIGATION: NavigationItem[] = [
             href: '/historias/informe/listado-evoluciones',
             icon: '📈',
             requiresAuth: true,
-            roles: ['Médico', 'Enfermero'],
+            roles: ['Administrador', 'Médico', 'Enfermero'],
           },
           {
             id: 'historias-informe-listado-evoluciones-ambulatoria',
@@ -800,7 +806,7 @@ export const MAIN_NAVIGATION: NavigationItem[] = [
             href: '/historias/informe/listado-evoluciones-ambulatoria',
             icon: '🏥',
             requiresAuth: true,
-            roles: ['Médico', 'Enfermero'],
+            roles: ['Administrador', 'Médico', 'Enfermero'],
           },
         ],
       },
@@ -2084,32 +2090,6 @@ export const MAIN_NAVIGATION: NavigationItem[] = [
     description: 'Gestión de admisiones e ingresos',
     requiresAuth: true,
     roles: ['Administrador', 'Médico', 'Enfermero'],
-    children: [
-      {
-        id: 'admision-dashboard',
-        title: 'Dashboard de admisiones',
-        href: '/admision',
-        icon: '📊',
-        requiresAuth: true,
-        roles: ['Administrador', 'Médico', 'Enfermero'],
-      },
-      {
-        id: 'admision-listado',
-        title: 'Listado de admisiones',
-        href: '/admisiones',
-        icon: '📋',
-        requiresAuth: true,
-        roles: ['Administrador', 'Médico', 'Enfermero'],
-      },
-      {
-        id: 'admision-ingreso',
-        title: 'Registro de ingreso',
-        href: '/facturacion/administracion/admisiones',
-        icon: '➕',
-        requiresAuth: true,
-        roles: ['Administrador', 'Médico', 'Enfermero'],
-      },
-    ],
   },
 
 ];
@@ -2124,7 +2104,26 @@ export const getModulesByRole = (userRole: string): ModuleConfig[] => {
 
 export const getNavigationByRole = (userRole: string): NavigationItem[] => {
   const normalized = normalizeRole(userRole);
-  return MAIN_NAVIGATION.filter((item) => item.roles?.includes(normalized));
+
+  const filterByRole = (items: NavigationItem[]): NavigationItem[] =>
+    items
+      .filter((item) => !item.roles || item.roles.includes(normalized))
+      .map((item) => {
+        const hadChildren = !!(item.children && item.children.length);
+        const children = item.children ? filterByRole(item.children) : undefined;
+        return { item, hadChildren, children };
+      })
+      .filter(({ hadChildren, children }) => {
+        // Contenedor sin hijos visibles para este rol → ocultar
+        if (hadChildren && (!children || children.length === 0)) return false;
+        return true;
+      })
+      .map(({ item, children }) => ({
+        ...item,
+        children: children && children.length > 0 ? children : undefined,
+      }));
+
+  return filterByRole(MAIN_NAVIGATION);
 };
 
 export const isModuleAccessible = (moduleId: ModuleType, userRole: string): boolean => {
@@ -2174,8 +2173,9 @@ export const getAllAccessibleItems = (userRole: string): NavigationItem[] => {
 const MODULE_PERMISSION_MAP: Record<string, string> = {
   'dashboard': 'dashboard',
   'configuracion': 'configuracion',
-  'patients': 'pacientes',
+  'plataforma': 'plataforma',
   'admin': 'administracion',
+  'admin-pacientes': 'pacientes',
   'facturacion': 'facturacion',
   'citas': 'citas',
   'historias': 'historias',

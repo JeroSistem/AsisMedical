@@ -1,16 +1,33 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ModulePageLayout, ModuleCard } from '@/components/shared/module-page-layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Upload, Save, Users, User, Shield, Mail, Phone, MapPin, Calendar } from 'lucide-react';
+import { Upload, Save, User, Shield, Mail, List, Plus, RefreshCw, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
+import Link from 'next/link';
+import {
+  createInstitutionEmployee,
+  listInstitutionEmployees,
+  setInstitutionEmployeeStatus,
+  updateInstitutionEmployee,
+} from '@/lib/actions/entity-employees';
+import { getMyInstitution } from '@/lib/actions/my-institution';
+import { listAccessProfiles } from '@/lib/actions/access-profiles';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 
 interface UserFormData {
   // Información Personal
@@ -30,21 +47,14 @@ interface UserFormData {
   username: string;
   password: string;
   confirmPassword: string;
-  role: string;
   departmentWork: string;
   position: string;
   employeeCode: string;
   hireDate: string;
   status: string;
 
-  // Permisos y Acceso
-  canAccessAdmin: boolean;
-  canAccessMedical: boolean;
-  canAccessFinancial: boolean;
-  canAccessInventory: boolean;
-  canAccessReports: boolean;
-  canManageUsers: boolean;
-  canManageRoles: boolean;
+  /** Perfil de acceso (Roles / Perfiles) */
+  accessProfileId: string;
 
   // Configuración de Notificaciones
   emailNotifications: boolean;
@@ -55,7 +65,49 @@ interface UserFormData {
   reportNotifications: boolean;
 }
 
+type AccessProfileOption = {
+  id: string;
+  name: string;
+  description: string;
+  status: string;
+};
+
+type EmployeeRow = {
+  id: string;
+  name: string;
+  email: string;
+  username: string;
+  status: string;
+  accessProfileId: string | null;
+  accessProfileName: string | null;
+  createdAt: string;
+  lastLogin: string | null;
+};
+
+function statusLabel(status: string) {
+  const s = (status || '').toLowerCase();
+  if (s === 'active' || s === 'activo') return 'Activo';
+  if (s === 'inactive' || s === 'inactivo') return 'Inactivo';
+  if (s === 'suspended' || s === 'suspendido') return 'Suspendido';
+  return status || '—';
+}
+
+function formatDate(value?: string | null) {
+  if (!value) return '—';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return '—';
+  return d.toLocaleString('es-CO');
+}
+
 export default function UsersPage() {
+  const [tab, setTab] = useState<'crear' | 'lista'>('crear');
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [institutionLabel, setInstitutionLabel] = useState('');
+  const [profiles, setProfiles] = useState<AccessProfileOption[]>([]);
+  const [loadingProfiles, setLoadingProfiles] = useState(true);
+  const [employees, setEmployees] = useState<EmployeeRow[]>([]);
+  const [loadingEmployees, setLoadingEmployees] = useState(false);
   const [formData, setFormData] = useState<UserFormData>({
     // Información Personal
     firstName: '',
@@ -74,21 +126,13 @@ export default function UsersPage() {
     username: '',
     password: '',
     confirmPassword: '',
-    role: 'user',
     departmentWork: '',
     position: '',
     employeeCode: '',
     hireDate: '',
     status: 'active',
 
-    // Permisos y Acceso
-    canAccessAdmin: false,
-    canAccessMedical: false,
-    canAccessFinancial: false,
-    canAccessInventory: false,
-    canAccessReports: false,
-    canManageUsers: false,
-    canManageRoles: false,
+    accessProfileId: '',
 
     // Configuración de Notificaciones
     emailNotifications: true,
@@ -98,6 +142,68 @@ export default function UsersPage() {
     systemAlerts: true,
     reportNotifications: false,
   });
+
+  const loadEmployees = async () => {
+    setLoadingEmployees(true);
+    try {
+      const res = await listInstitutionEmployees();
+      if (!res.success) {
+        toast.error(res.error || 'No se pudo cargar la lista de usuarios');
+        setEmployees([]);
+        return;
+      }
+      setEmployees(
+        (res.data || []).map((u) => ({
+          id: u.id,
+          name: u.name,
+          email: u.email,
+          username: u.username,
+          status: u.status,
+          accessProfileId: u.accessProfileId || null,
+          accessProfileName: u.accessProfileName || null,
+          createdAt: u.createdAt,
+          lastLogin: u.lastLogin,
+        }))
+      );
+    } catch {
+      toast.error('Error al cargar usuarios');
+    } finally {
+      setLoadingEmployees(false);
+    }
+  };
+
+  useEffect(() => {
+    (async () => {
+      const [inst, profilesRes] = await Promise.all([
+        getMyInstitution(),
+        listAccessProfiles(),
+      ]);
+      if (inst.success && inst.data) {
+        setInstitutionLabel(inst.data.name);
+        setFormData((prev) => ({
+          ...prev,
+          city: inst.data!.city || '',
+          department: inst.data!.department || '',
+          phone: prev.phone || inst.data!.phone || '',
+        }));
+      }
+      if (profilesRes.success) {
+        const active = (profilesRes.data || []).filter(
+          (p) => String(p.status).toLowerCase() === 'active'
+        );
+        setProfiles(active);
+      } else if (profilesRes.error) {
+        toast.error(profilesRes.error);
+      }
+      setLoadingProfiles(false);
+    })();
+  }, []);
+
+  useEffect(() => {
+    if (tab === 'lista') {
+      void loadEmployees();
+    }
+  }, [tab]);
 
   const handleInputChange = (field: keyof UserFormData, value: string | boolean | File | null) => {
     setFormData(prev => ({
@@ -113,52 +219,234 @@ export default function UsersPage() {
     }));
   };
 
+  const resetCreateForm = (keepInstitution = true) => {
+    setEditingId(null);
+    setFormData((prev) => ({
+      ...prev,
+      firstName: '',
+      lastName: '',
+      email: '',
+      username: '',
+      password: '',
+      confirmPassword: '',
+      identificationNumber: '',
+      address: '',
+      departmentWork: '',
+      position: '',
+      employeeCode: '',
+      accessProfileId: '',
+      status: 'active',
+      phone: keepInstitution ? prev.phone : '',
+      city: keepInstitution ? prev.city : '',
+      department: keepInstitution ? prev.department : '',
+    }));
+  };
+
+  const startEdit = (row: EmployeeRow) => {
+    const parts = row.name.trim().split(/\s+/);
+    const firstName = parts[0] || '';
+    const lastName = parts.slice(1).join(' ') || '';
+    const st = (row.status || '').toLowerCase();
+    const status =
+      st === 'inactive' || st === 'inactivo'
+        ? 'inactive'
+        : st === 'suspended' || st === 'suspendido'
+          ? 'suspended'
+          : 'active';
+
+    setEditingId(row.id);
+    setFormData((prev) => ({
+      ...prev,
+      firstName,
+      lastName,
+      email: row.email || '',
+      username: row.username || '',
+      password: '',
+      confirmPassword: '',
+      accessProfileId: row.accessProfileId || '',
+      status,
+    }));
+    setTab('crear');
+    toast.message('Editando usuario', {
+      description: 'Deje la contraseña en blanco si no desea cambiarla.',
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Validar campos obligatorios
-    const requiredFields = [
-      'firstName', 'lastName', 'email', 'phone', 'identificationNumber',
-      'username', 'password', 'confirmPassword', 'role', 'departmentWork', 'position'
-    ];
 
-    const missingFields = requiredFields.filter(field => !formData[field as keyof UserFormData]);
-    
-    if (missingFields.length > 0) {
-      toast.error('Por favor complete todos los campos obligatorios');
+    if (
+      !formData.firstName.trim() ||
+      !formData.lastName.trim() ||
+      !formData.email.trim() ||
+      !formData.username.trim()
+    ) {
+      toast.error('Complete nombre, apellido, email y usuario');
       return;
     }
 
-    // Validar que las contraseñas coincidan
-    if (formData.password !== formData.confirmPassword) {
-      toast.error('Las contraseñas no coinciden');
+    if (!editingId) {
+      if (!formData.password || !formData.confirmPassword) {
+        toast.error('Complete la contraseña y su confirmación');
+        return;
+      }
+    }
+
+    if (formData.password || formData.confirmPassword) {
+      if (formData.password !== formData.confirmPassword) {
+        toast.error('Las contraseñas no coinciden');
+        return;
+      }
+    }
+
+    if (!formData.accessProfileId) {
+      toast.error('Seleccione un perfil de acceso para el usuario');
       return;
     }
 
+    setSaving(true);
     try {
-      // Aquí iría la lógica para enviar los datos al servidor
-      console.log('Datos del formulario:', formData);
-      toast.success('Usuario guardado correctamente');
-    } catch (error) {
-      toast.error('Error al guardar el usuario');
+      if (editingId) {
+        const result = await updateInstitutionEmployee({
+          userId: editingId,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          email: formData.email,
+          username: formData.username,
+          password: formData.password || undefined,
+          status: formData.status,
+          accessProfileId: formData.accessProfileId,
+        });
+        if (!result.success) {
+          toast.error(result.error || 'No se pudo actualizar el usuario');
+          return;
+        }
+        toast.success('Usuario actualizado');
+        resetCreateForm();
+        setTab('lista');
+        void loadEmployees();
+        return;
+      }
+
+      const result = await createInstitutionEmployee({
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        username: formData.username,
+        password: formData.password,
+        status: formData.status,
+        accessProfileId: formData.accessProfileId,
+      });
+      if (!result.success) {
+        toast.error(result.error || 'No se pudo crear el usuario');
+        return;
+      }
+      toast.success(
+        `Usuario creado en la BD de ${institutionLabel || 'la institución'}`
+      );
+      resetCreateForm();
+      setTab('lista');
+      void loadEmployees();
+    } catch {
+      toast.error(
+        editingId ? 'Error al actualizar el usuario' : 'Error al guardar el usuario'
+      );
+    } finally {
+      setSaving(false);
     }
   };
 
-  const actions = (
-    <Button type="submit" form="user-form" className="flex items-center gap-2">
-      <Save className="h-4 w-4" />
-      Guardar Usuario
-    </Button>
-  );
+  const toggleEmployeeStatus = async (row: EmployeeRow) => {
+    const isActive =
+      row.status.toLowerCase() === 'active' || row.status.toLowerCase() === 'activo';
+    const next = isActive ? 'Inactive' : 'Active';
+    const res = await setInstitutionEmployeeStatus(row.id, next);
+    if (!res.success) {
+      toast.error(res.error || 'No se pudo cambiar el estado');
+      return;
+    }
+    toast.success(`Usuario ${next === 'Active' ? 'activado' : 'desactivado'}`);
+    void loadEmployees();
+  };
+
+  const actions =
+    tab === 'crear' ? (
+      <div className="flex gap-2">
+        {editingId ? (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => {
+              resetCreateForm();
+              setTab('lista');
+            }}
+          >
+            Cancelar
+          </Button>
+        ) : null}
+        <Button type="submit" form="user-form" className="flex items-center gap-2" disabled={saving}>
+          <Save className="h-4 w-4" />
+          {saving
+            ? 'Guardando…'
+            : editingId
+              ? 'Actualizar usuario'
+              : 'Guardar Usuario'}
+        </Button>
+      </div>
+    ) : (
+      <Button
+        type="button"
+        variant="outline"
+        onClick={() => void loadEmployees()}
+        disabled={loadingEmployees}
+      >
+        <RefreshCw className={`mr-2 h-4 w-4 ${loadingEmployees ? 'animate-spin' : ''}`} />
+        Actualizar
+      </Button>
+    );
 
   return (
     <ModulePageLayout
       title="Gestión de Usuarios"
-      description="Crear y administrar usuarios del sistema"
+      description={
+        institutionLabel
+          ? `Empleados de ${institutionLabel} (ciudad y departamento vienen de la institución)`
+          : 'Crear y administrar usuarios de la institución'
+      }
       actions={actions}
       maxWidth="7xl"
       showBackButton={true}
     >
+      <Tabs
+        value={tab}
+        onValueChange={(v) => {
+          const next = v === 'lista' ? 'lista' : 'crear';
+          if (next === 'lista' && editingId) {
+            resetCreateForm();
+          }
+          if (next === 'crear' && !editingId) {
+            // crear nuevo
+          }
+          setTab(next);
+        }}
+        className="space-y-6"
+      >
+        <TabsList>
+          <TabsTrigger value="crear" className="gap-2">
+            {editingId ? (
+              <Pencil className="h-4 w-4" />
+            ) : (
+              <Plus className="h-4 w-4" />
+            )}
+            {editingId ? 'Editar usuario' : 'Crear usuario'}
+          </TabsTrigger>
+          <TabsTrigger value="lista" className="gap-2">
+            <List className="h-4 w-4" />
+            Lista de usuarios
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="crear" className="mt-0 space-y-6">
       <form id="user-form" onSubmit={handleSubmit} className="space-y-6">
         {/* Sección 1: Información Personal */}
         <ModuleCard>
@@ -284,7 +572,9 @@ export default function UsersPage() {
                       id="city"
                       value={formData.city}
                       onChange={(e) => handleInputChange('city', e.target.value)}
-                      placeholder="Ciudad"
+                      placeholder="Ciudad (de la institución)"
+                      readOnly
+                      className="bg-slate-50"
                     />
                   </div>
 
@@ -294,7 +584,9 @@ export default function UsersPage() {
                       id="department"
                       value={formData.department}
                       onChange={(e) => handleInputChange('department', e.target.value)}
-                      placeholder="Departamento"
+                      placeholder="Departamento (de la institución)"
+                      readOnly
+                      className="bg-slate-50"
                     />
                   </div>
 
@@ -346,49 +638,47 @@ export default function UsersPage() {
                   <div className="space-y-2">
                     <Label htmlFor="password" className="flex items-center gap-1">
                       Contraseña
-                      <Badge variant="destructive" className="text-xs">*</Badge>
+                      {!editingId ? (
+                        <Badge variant="destructive" className="text-xs">
+                          *
+                        </Badge>
+                      ) : null}
                     </Label>
                     <Input
                       id="password"
                       type="password"
                       value={formData.password}
                       onChange={(e) => handleInputChange('password', e.target.value)}
-                      placeholder="Contraseña"
-                      required
+                      placeholder={
+                        editingId
+                          ? 'Dejar en blanco para no cambiar'
+                          : 'Contraseña'
+                      }
+                      required={!editingId}
                     />
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="confirmPassword" className="flex items-center gap-1">
                       Confirmar Contraseña
-                      <Badge variant="destructive" className="text-xs">*</Badge>
+                      {!editingId ? (
+                        <Badge variant="destructive" className="text-xs">
+                          *
+                        </Badge>
+                      ) : null}
                     </Label>
                     <Input
                       id="confirmPassword"
                       type="password"
                       value={formData.confirmPassword}
                       onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
-                      placeholder="Confirmar contraseña"
-                      required
+                      placeholder={
+                        editingId
+                          ? 'Dejar en blanco para no cambiar'
+                          : 'Confirmar contraseña'
+                      }
+                      required={!editingId}
                     />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="role" className="flex items-center gap-1">
-                      Rol
-                      <Badge variant="destructive" className="text-xs">*</Badge>
-                    </Label>
-                    <Select value={formData.role} onValueChange={(value) => handleInputChange('role', value)}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="admin">Administrador</SelectItem>
-                        <SelectItem value="medico">Médico</SelectItem>
-                        <SelectItem value="enfermero">Enfermero</SelectItem>
-                        <SelectItem value="user">Usuario</SelectItem>
-                      </SelectContent>
-                    </Select>
                   </div>
 
                   <div className="space-y-2">
@@ -456,107 +746,63 @@ export default function UsersPage() {
               </CardContent>
         </ModuleCard>
 
-        {/* Sección 3: Permisos y Acceso */}
+        {/* Sección 3: Perfil de acceso */}
         <ModuleCard>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Shield className="h-5 w-5" />
-              Permisos y Acceso
+              Perfil de acceso
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div className="space-y-4">
-                    <h3 className="font-semibold text-gray-700 mb-4">Módulos de Acceso</h3>
-                    
-                    <div className="space-y-3">
-                      <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                        <input
-                          type="checkbox"
-                          id="canAccessAdmin"
-                          checked={formData.canAccessAdmin}
-                          onChange={(e) => handleInputChange('canAccessAdmin', e.target.checked)}
-                          className="rounded"
-                        />
-                        <Label htmlFor="canAccessAdmin" className="cursor-pointer">Acceso a Administración</Label>
-                      </div>
-
-                      <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                        <input
-                          type="checkbox"
-                          id="canAccessMedical"
-                          checked={formData.canAccessMedical}
-                          onChange={(e) => handleInputChange('canAccessMedical', e.target.checked)}
-                          className="rounded"
-                        />
-                        <Label htmlFor="canAccessMedical" className="cursor-pointer">Acceso a Módulos Médicos</Label>
-                      </div>
-
-                      <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                        <input
-                          type="checkbox"
-                          id="canAccessFinancial"
-                          checked={formData.canAccessFinancial}
-                          onChange={(e) => handleInputChange('canAccessFinancial', e.target.checked)}
-                          className="rounded"
-                        />
-                        <Label htmlFor="canAccessFinancial" className="cursor-pointer">Acceso a Módulos Financieros</Label>
-                      </div>
-
-                      <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                        <input
-                          type="checkbox"
-                          id="canAccessInventory"
-                          checked={formData.canAccessInventory}
-                          onChange={(e) => handleInputChange('canAccessInventory', e.target.checked)}
-                          className="rounded"
-                        />
-                        <Label htmlFor="canAccessInventory" className="cursor-pointer">Acceso a Inventario</Label>
-                      </div>
-
-                      <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                        <input
-                          type="checkbox"
-                          id="canAccessReports"
-                          checked={formData.canAccessReports}
-                          onChange={(e) => handleInputChange('canAccessReports', e.target.checked)}
-                          className="rounded"
-                        />
-                        <Label htmlFor="canAccessReports" className="cursor-pointer">Acceso a Reportes</Label>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    <h3 className="font-semibold text-gray-700 mb-4">Permisos Especiales</h3>
-                    
-                    <div className="space-y-3">
-                      <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                        <input
-                          type="checkbox"
-                          id="canManageUsers"
-                          checked={formData.canManageUsers}
-                          onChange={(e) => handleInputChange('canManageUsers', e.target.checked)}
-                          className="rounded"
-                        />
-                        <Label htmlFor="canManageUsers" className="cursor-pointer">Gestionar Usuarios</Label>
-                      </div>
-
-                      <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                        <input
-                          type="checkbox"
-                          id="canManageRoles"
-                          checked={formData.canManageRoles}
-                          onChange={(e) => handleInputChange('canManageRoles', e.target.checked)}
-                          className="rounded"
-                        />
-                        <Label htmlFor="canManageRoles" className="cursor-pointer">Gestionar Roles</Label>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
+            <div className="max-w-xl space-y-2">
+              <Label htmlFor="accessProfileId" className="flex items-center gap-1">
+                Perfil asignado
+                <Badge variant="destructive" className="text-xs">
+                  *
+                </Badge>
+              </Label>
+              <Select
+                value={formData.accessProfileId || undefined}
+                onValueChange={(value) => handleInputChange('accessProfileId', value)}
+                disabled={loadingProfiles || profiles.length === 0}
+              >
+                <SelectTrigger id="accessProfileId">
+                  <SelectValue
+                    placeholder={
+                      loadingProfiles
+                        ? 'Cargando perfiles…'
+                        : profiles.length === 0
+                          ? 'No hay perfiles creados'
+                          : 'Seleccione un perfil'
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {profiles.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.name}
+                      {p.description ? ` — ${p.description}` : ''}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-sm text-muted-foreground">
+                Los permisos del usuario salen del perfil seleccionado. Cree o edite
+                perfiles en{' '}
+                <Link href="/admin/roles" className="text-primary underline-offset-4 hover:underline">
+                  Roles / Perfiles
+                </Link>
+                .
+              </p>
+              {!loadingProfiles && profiles.length === 0 ? (
+                <p className="text-sm text-amber-700">
+                  Debe crear al menos un perfil activo antes de registrar usuarios del
+                  sistema.
+                </p>
+              ) : null}
+            </div>
+          </CardContent>
         </ModuleCard>
 
         {/* Sección 4: Configuración de Notificaciones */}
@@ -651,6 +897,102 @@ export default function UsersPage() {
               </CardContent>
         </ModuleCard>
       </form>
+        </TabsContent>
+
+        <TabsContent value="lista" className="mt-0">
+          <ModuleCard>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <List className="h-5 w-5" />
+                Lista de usuarios
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {loadingEmployees ? (
+                <p className="py-8 text-center text-sm text-muted-foreground">
+                  Cargando usuarios…
+                </p>
+              ) : employees.length === 0 ? (
+                <div className="space-y-3 py-10 text-center">
+                  <p className="text-sm text-muted-foreground">
+                    Aún no hay usuarios del sistema registrados.
+                  </p>
+                  <Button type="button" onClick={() => setTab('crear')}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Crear usuario
+                  </Button>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Nombre</TableHead>
+                        <TableHead>Usuario</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Perfil</TableHead>
+                        <TableHead>Estado</TableHead>
+                        <TableHead>Creado</TableHead>
+                        <TableHead>Último acceso</TableHead>
+                        <TableHead className="text-right">Acción</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {employees.map((u) => {
+                        const isActive =
+                          u.status.toLowerCase() === 'active' ||
+                          u.status.toLowerCase() === 'activo';
+                        return (
+                          <TableRow key={u.id}>
+                            <TableCell className="font-medium">{u.name}</TableCell>
+                            <TableCell className="font-mono text-sm">
+                              {u.username || '—'}
+                            </TableCell>
+                            <TableCell>{u.email}</TableCell>
+                            <TableCell>{u.accessProfileName || '—'}</TableCell>
+                            <TableCell>
+                              <Badge variant={isActive ? 'default' : 'secondary'}>
+                                {statusLabel(u.status)}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="whitespace-nowrap text-sm">
+                              {formatDate(u.createdAt)}
+                            </TableCell>
+                            <TableCell className="whitespace-nowrap text-sm">
+                              {formatDate(u.lastLogin)}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex justify-end gap-2">
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => startEdit(u)}
+                                >
+                                  <Pencil className="mr-1 h-3.5 w-3.5" />
+                                  Editar
+                                </Button>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => void toggleEmployeeStatus(u)}
+                                >
+                                  {isActive ? 'Desactivar' : 'Activar'}
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </ModuleCard>
+        </TabsContent>
+      </Tabs>
     </ModulePageLayout>
   );
 }

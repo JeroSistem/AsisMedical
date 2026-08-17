@@ -246,11 +246,75 @@ export function CompactModuleNavigation({ userRole }: CompactModuleNavigationPro
 }
 
 // Componente de navegación con submódulos expandibles + reordenamiento
-export function CompactModuleNavigationWithSubmodules({ userRole }: { userRole: string }) {
+export function CompactModuleNavigationWithSubmodules({
+  userRole,
+  entityId,
+}: {
+  userRole: string;
+  entityId?: string | null;
+}) {
   const pathname = usePathname();
   const router = useRouter();
+  const isPlatformOwner = userRole === 'SUPER_ADMIN';
 
-  const roleModules = useMemo(() => getNavigationByRole(userRole), [userRole]);
+  const [roleModules, setRoleModules] = useState<NavigationItem[]>(() => {
+    const modules = getNavigationByRole(userRole);
+    if (isPlatformOwner) return modules;
+    return modules.filter(
+      (item) => item.id !== 'plataforma' && item.id !== 'configuracion'
+    );
+  });
+  const [navLoading, setNavLoading] = useState(!isPlatformOwner);
+
+  // ENTITY_ADMIN (y otros con entityId): solo módulos contratados
+  useEffect(() => {
+    if (isPlatformOwner) {
+      setRoleModules(getNavigationByRole(userRole));
+      setNavLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    setNavLoading(true);
+    (async () => {
+      try {
+        const res = await fetch('/api/navigation/filtered', {
+          credentials: 'include',
+          cache: 'no-store',
+        });
+        const json = await res.json();
+        if (cancelled) return;
+        if (json.success && Array.isArray(json.data)) {
+          setRoleModules(
+            json.data.filter(
+              (item: NavigationItem) =>
+                item.id !== 'plataforma' && item.id !== 'configuracion'
+            )
+          );
+        } else if (entityId) {
+          // Sin módulos asignados: menú vacío (no mostrar todo)
+          setRoleModules([]);
+        } else {
+          setRoleModules(
+            getNavigationByRole(userRole).filter(
+              (item) =>
+                item.id !== 'plataforma' && item.id !== 'configuracion'
+            )
+          );
+        }
+      } catch {
+        if (!cancelled) {
+          setRoleModules(entityId ? [] : getNavigationByRole(userRole));
+        }
+      } finally {
+        if (!cancelled) setNavLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [userRole, entityId, isPlatformOwner]);
 
   const [orderIds, setOrderIds] = useState<string[]>([]);
   const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
@@ -377,11 +441,21 @@ export function CompactModuleNavigationWithSubmodules({ userRole }: { userRole: 
   const itemClass = (active: boolean) =>
     cn('nav-item-stitch group', active && 'nav-item-stitch--active');
 
+  if (navLoading) {
+    return (
+      <nav className="space-y-0.5 px-1">
+        <div className="px-2.5 py-2 text-[13px] text-[#4d7f8f]">
+          Cargando módulos…
+        </div>
+      </nav>
+    );
+  }
+
   if (accessibleModules.length === 0) {
     return (
       <nav className="space-y-0.5 px-1">
         <div className="px-2.5 py-2 text-[13px] text-[#4d7f8f]">
-          No hay módulos disponibles para este rol
+          No hay módulos disponibles para su usuario. Verifique el perfil de acceso asignado.
         </div>
       </nav>
     );
@@ -485,7 +559,7 @@ export function CompactModuleNavigationWithSubmodules({ userRole }: { userRole: 
                   </div>
 
                   {!moveMode && (
-                    <CollapsibleContent className="ml-2 mt-0.5 space-y-0.5 rounded-md border border-[#d7eef4] bg-white p-1.5 shadow-sm">
+                    <CollapsibleContent className="ml-2 mt-0.5 space-y-0 rounded-md border border-[#d7eef4] bg-white p-1 shadow-sm">
                       {module.children?.map((submodule) => {
                         const isSubActive =
                           pathname === submodule.href ||

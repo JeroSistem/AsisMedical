@@ -501,7 +501,7 @@ export function AdvancedTab({ onChange, entityId }: AdvancedTabProps) {
             </div>
             <div className="flex justify-between py-2 border-b">
               <span className="text-muted-foreground">Base de Datos:</span>
-              <Badge variant="secondary">PostgreSQL 17</Badge>
+              <Badge variant="secondary">MySQL 8.4</Badge>
             </div>
             <div className="flex justify-between py-2 border-b">
               <span className="text-muted-foreground">Versión del Sistema:</span>

@@ -65,8 +65,8 @@ export const userSchema = z.object({
   password: passwordSchema.optional()
 })
 
-// Login schema
+// Login schema (usuario o email + contraseña)
 export const loginSchema = z.object({
-  email: emailSchema,
-  password: z.string().min(1)
+  username: z.string().min(1, 'Usuario requerido').max(120),
+  password: z.string().min(1, 'Contraseña requerida'),
 })

@@ -4,6 +4,7 @@
 export const MODULE_TYPES = {
   ADMIN: 'admin',
   CONFIGURACION: 'configuracion',
+  PLATAFORMA: 'plataforma',
   FACTURACION: 'facturacion',
   HISTORIAS: 'historias',
   TRIAGE: 'triage',

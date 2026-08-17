@@ -1,15 +1,13 @@
-'use server';
-
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { getSystemConfig } from '@/lib/actions/config';
-import { getNavigationByRole, filterNavigationByPermissions, type NavigationItem } from '@/lib/navigation';
+import { getNavigationByRole, filterNavigationByPermissions, MAIN_NAVIGATION, type NavigationItem } from '@/lib/navigation';
 import { prisma } from '@/lib/prisma';
-import { getPrismaClient } from '@/lib/database-manager';
+import { getPrismaClient, getPrismaClientForEntity } from '@/lib/database-manager';
 
 /**
  * Obtiene los permisos del usuario actual desde la configuración de roles
- * Server Action
+ * (módulo de servidor; helpers síncronos también se exportan, por eso no usa 'use server')
  */
 export async function getUserPermissions(entityId?: string | null): Promise<Record<string, { read: boolean; create: boolean; update: boolean; delete: boolean }> | null> {
   try {
@@ -115,83 +113,50 @@ export async function getUserPermissions(entityId?: string | null): Promise<Reco
  */
 export async function getEnabledModulesForEntity(entityId: string): Promise<Set<string>> {
   try {
-    // Obtener el cliente Prisma correcto para esta entidad
-    const entityPrisma = getPrismaClient(entityId);
-    
-    if (!entityPrisma || typeof entityPrisma.entityModule === 'undefined') {
-      console.log('[getEnabledModulesForEntity] Prisma no disponible para entidad:', entityId);
-      return new Set(); // Si no hay BD, retornar vacío (bloquear todo excepto SUPER_ADMIN)
+    let entityModules: Array<{ module: { id: string; name: string }; enabled: boolean }> = [];
+
+    // 1) Preferir BD principal (más confiable para el menú)
+    if (prisma && typeof prisma.entityModule !== 'undefined') {
+      try {
+        const mainRecords = await prisma.entityModule.findMany({
+          where: { entityId, enabled: true },
+          include: { module: { select: { id: true, name: true } } },
+        });
+        entityModules = mainRecords.map((em) => ({
+          enabled: em.enabled,
+          module: em.module,
+        }));
+      } catch (mainErr) {
+        console.warn('[getEnabledModulesForEntity] BD principal:', mainErr);
+      }
     }
 
-    let entityModules = [];
-    try {
-      // Primero obtener los EntityModule sin relaciones
-      const entityModuleRecords = await entityPrisma.entityModule.findMany({
-        where: {
-          entityId: entityId,
-          enabled: true,
-        },
-      });
-
-      // Luego obtener los módulos correspondientes usando los moduleIds
-      const moduleIds = entityModuleRecords.map(em => em.moduleId);
-      
-      if (moduleIds.length > 0) {
-        const modules = await entityPrisma.module.findMany({
-          where: {
-            id: { in: moduleIds },
-          },
-          select: {
-            id: true,
-            name: true,
-          },
-        });
-
-        // Combinar EntityModule con Module
-        entityModules = entityModuleRecords.map(em => ({
-          ...em,
-          module: modules.find(m => m.id === em.moduleId) || { id: em.moduleId, name: 'Unknown' },
-        }));
-      }
-    } catch (tableError: any) {
-      // Si la tabla no existe, intentar actualizar el esquema
-      if (tableError.message?.includes('does not exist') || tableError.message?.includes('not available')) {
-        console.log('[getEnabledModulesForEntity] Tabla entity_modules no existe, actualizando esquema...');
-        const { updateEntityDatabaseSchema } = await import('@/lib/database-manager');
-        const updateResult = await updateEntityDatabaseSchema(entityId);
-        if (updateResult.success) {
-          // Reintentar la consulta después de actualizar el esquema
+    // 2) Fallback / complemento: BD de la entidad
+    if (entityModules.length === 0) {
+      const entityPrisma = getPrismaClient(entityId);
+      if (entityPrisma && typeof entityPrisma.entityModule !== 'undefined') {
+        try {
           const entityModuleRecords = await entityPrisma.entityModule.findMany({
-            where: {
-              entityId: entityId,
-              enabled: true,
-            },
+            where: { entityId, enabled: true },
           });
-
-          const moduleIds = entityModuleRecords.map(em => em.moduleId);
-          
+          const moduleIds = entityModuleRecords.map((em) => em.moduleId);
           if (moduleIds.length > 0) {
             const modules = await entityPrisma.module.findMany({
-              where: {
-                id: { in: moduleIds },
-              },
-              select: {
-                id: true,
-                name: true,
-              },
+              where: { id: { in: moduleIds } },
+              select: { id: true, name: true },
             });
-
-            entityModules = entityModuleRecords.map(em => ({
-              ...em,
-              module: modules.find(m => m.id === em.moduleId) || { id: em.moduleId, name: 'Unknown' },
+            entityModules = entityModuleRecords.map((em) => ({
+              enabled: em.enabled,
+              module:
+                modules.find((m) => m.id === em.moduleId) || {
+                  id: em.moduleId,
+                  name: 'Unknown',
+                },
             }));
           }
-        } else {
-          console.error('[getEnabledModulesForEntity] Error actualizando esquema:', updateResult.error);
-          return new Set(); // Retornar vacío si no se puede actualizar
+        } catch (tableError: any) {
+          console.warn('[getEnabledModulesForEntity] BD entidad:', tableError?.message);
         }
-      } else {
-        throw tableError;
       }
     }
 
@@ -265,8 +230,9 @@ export async function getEnabledModulesForEntity(entityId: string): Promise<Set<
  */
 const NAVIGATION_TO_MODULE_MAP: Record<string, string[]> = {
   'dashboard': ['dashboard', 'panel principal'],
+  'admin': ['administracion', 'administración', 'admin', 'administracion del sistema', 'administración del sistema', 'pacientes', 'patients', 'gestión de pacientes'],
+  // patients queda bajo Administración; se mantiene por compatibilidad de mapeos antiguos
   'patients': ['pacientes', 'patients', 'gestión de pacientes'],
-  'admin': ['administracion', 'administración', 'admin', 'administracion del sistema', 'administración del sistema'],
   'facturacion': ['facturacion', 'facturación', 'billing'],
   'citas': ['citas', 'appointments', 'citas médicas'],
   'historias': ['historias', 'historias clinicas', 'historias clínicas', 'clinical records'],
@@ -284,6 +250,7 @@ const NAVIGATION_TO_MODULE_MAP: Record<string, string[]> = {
   'cartera': ['cartera', 'portfolio'],
   'admision': ['admisiones', 'admisión', 'admissions'],
   'configuracion': ['configuracion', 'configuración', 'configuration', 'configuración general'], // Solo para SUPER_ADMIN
+  'plataforma': ['plataforma', 'usuarios principales', 'usuarios-principales'], // Solo para SUPER_ADMIN
 };
 
 /**
@@ -318,7 +285,7 @@ function getNavigationIdForModuleName(moduleName: string): string[] {
   // Mapeo directo de nombres en BD a IDs de navegación
   const directMapping: Record<string, string> = {
     'dashboard': 'dashboard',
-    'pacientes': 'patients',
+    'pacientes': 'admin',
     'administracion': 'admin',
     'administración': 'admin',
     'facturacion': 'facturacion',
@@ -384,7 +351,7 @@ function normalizeString(str: string): string {
 /**
  * Verifica si un módulo de navegación está habilitado para la entidad
  */
-function isModuleEnabledForEntity(navItemId: string, enabledModuleNames: Set<string>): boolean {
+export function isModuleEnabledForEntity(navItemId: string, enabledModuleNames: Set<string>): boolean {
   // Si no hay módulos habilitados, bloquear todo (excepto para SUPER_ADMIN que se maneja arriba)
   if (enabledModuleNames.size === 0) {
     console.log(`[isModuleEnabledForEntity] No hay módulos habilitados, bloqueando "${navItemId}"`);
@@ -465,92 +432,212 @@ function filterNavigationByEnabledModules(
   return filtered;
 }
 
+type ProfilePermRow = {
+  moduleKey: string;
+  submoduleKey: string;
+  canRead: boolean;
+};
+
+/**
+ * Carga permisos del perfil de acceso del usuario (BD tenant).
+ */
+async function getAccessProfilePermissionsForUser(
+  userId: string,
+  entityId: string
+): Promise<ProfilePermRow[]> {
+  try {
+    const entityPrisma = getPrismaClientForEntity(entityId);
+    const rows = await entityPrisma.$queryRaw<ProfilePermRow[]>`
+      SELECT
+        p.module_key AS "moduleKey",
+        COALESCE(p.submodule_key, '') AS "submoduleKey",
+        p.can_read AS "canRead"
+      FROM users u
+      INNER JOIN access_profiles ap ON ap.id = u.access_profile_id
+      INNER JOIN access_profile_permissions p ON p.profile_id = ap.id
+      WHERE u.id = ${userId}
+        AND u.entity_id = ${entityId}
+        AND LOWER(COALESCE(ap.status, 'active')) IN ('active', 'activo')
+    `;
+    return (rows || []).map((r) => ({
+      moduleKey: String(r.moduleKey || ''),
+      submoduleKey: String(r.submoduleKey || ''),
+      canRead: Boolean(r.canRead),
+    }));
+  } catch (error) {
+    console.error('[getAccessProfilePermissionsForUser]', error);
+    return [];
+  }
+}
+
+function isInstitutionAdminRole(role: string) {
+  return (
+    role === 'ENTITY_ADMIN' ||
+    role === 'ADMIN' ||
+    role === 'Administrador'
+  );
+}
+
+/**
+ * Filtra navegación según permisos del perfil (moduleKey / submoduleKey).
+ */
+function filterNavigationByAccessProfile(
+  navItems: NavigationItem[],
+  permissions: ProfilePermRow[]
+): NavigationItem[] {
+  const readable = permissions.filter((p) => p.canRead && p.moduleKey);
+  if (!readable.length) return [];
+
+  const byModule = new Map<string, Set<string>>();
+  for (const p of readable) {
+    if (!byModule.has(p.moduleKey)) byModule.set(p.moduleKey, new Set());
+    byModule.get(p.moduleKey)!.add(p.submoduleKey || '');
+  }
+
+  return navItems
+    .map((item) => {
+      const allowed = byModule.get(item.id);
+      if (!allowed) return null;
+
+      if (!item.children?.length) {
+        return item;
+      }
+
+      const fullModule = allowed.has('');
+      const filteredChildren = item.children
+        .map((child) => {
+          const childOk = fullModule || allowed.has(child.id);
+          if (!childOk) return null;
+
+          if (!child.children?.length) return child;
+
+          if (fullModule) return child;
+
+          const filteredGrand = child.children.filter((g) => allowed.has(g.id));
+          return {
+            ...child,
+            children: filteredGrand.length > 0 ? filteredGrand : undefined,
+          };
+        })
+        .filter((c): c is NavigationItem => c !== null);
+
+      if (!fullModule && filteredChildren.length === 0) return null;
+
+      return {
+        ...item,
+        children:
+          filteredChildren.length > 0
+            ? filteredChildren
+            : fullModule
+              ? item.children
+              : undefined,
+      };
+    })
+    .filter((item): item is NavigationItem => item !== null);
+}
+
 /**
  * Obtiene la navegación filtrada por permisos del usuario actual
- * Server Action
  */
 export async function getNavigationByPermissions(): Promise<NavigationItem[]> {
   try {
     const session = await getServerSession(authOptions);
     const userRole = (session?.user as any)?.role || 'Administrador';
     const userEntityId = (session?.user as any)?.entityId;
+    const userId = (session?.user as any)?.id as string | undefined;
 
-    console.log('[getNavigationByPermissions] Iniciando:', { userRole, userEntityId });
+    console.log('[getNavigationByPermissions] Iniciando:', {
+      userRole,
+      userEntityId,
+      userId,
+    });
 
-    // SUPER_ADMIN siempre ve todos los módulos (excepto configuración que se maneja después)
     if (userRole === 'SUPER_ADMIN') {
-      const baseNavigation = getNavigationByRole(userRole);
-      // Configuración ya está incluida para SUPER_ADMIN en getNavigationByRole
-      return baseNavigation;
+      return getNavigationByRole(userRole);
     }
 
-    // Si no hay entityId, no mostrar nada (usuario sin entidad asignada)
     if (!userEntityId) {
       console.log('[getNavigationByPermissions] Usuario sin entityId, retornando navegación vacía');
       return [];
     }
 
-    // Obtener módulos habilitados para la entidad
     const enabledModuleNames = await getEnabledModulesForEntity(userEntityId);
-    
-    // Si no hay módulos habilitados, retornar vacío (bloquear todo)
+
     if (enabledModuleNames.size === 0) {
-      console.log('[getNavigationByPermissions] ⚠️ No hay módulos habilitados para la entidad, retornando navegación vacía');
-      console.log('[getNavigationByPermissions] Para depurar, verifica que la entidad tenga módulos en EntityModule con enabled=true');
-      console.log('[getNavigationByPermissions] EntityId actual:', userEntityId);
+      console.log(
+        '[getNavigationByPermissions] No hay módulos habilitados para la entidad'
+      );
       return [];
     }
 
-    // Obtener permisos del usuario
-    const permissions = await getUserPermissions(userEntityId);
-
-    // Obtener navegación base por rol
-    const baseNavigation = getNavigationByRole(userRole);
-    console.log('[getNavigationByPermissions] Navegación base:', baseNavigation.length, 'módulos');
-
-    // Primero filtrar por módulos habilitados para la entidad
-    console.log('[getNavigationByPermissions] ANTES de filtrar por módulos habilitados:', {
-      baseNavigationCount: baseNavigation.length,
-      baseNavigationModules: baseNavigation.map(n => ({ id: n.id, title: n.title })),
-      enabledModuleNames: Array.from(enabledModuleNames),
-      enabledModuleNamesCount: enabledModuleNames.size
-    });
-    
-    let filteredNavigation = filterNavigationByEnabledModules(baseNavigation, enabledModuleNames);
-    
-    console.log('[getNavigationByPermissions] DESPUÉS de filtrar por módulos habilitados:', {
-      antes: baseNavigation.length,
-      despues: filteredNavigation.length,
-      modulosHabilitados: Array.from(enabledModuleNames),
-      modulosFiltrados: filteredNavigation.map(n => ({ id: n.id, title: n.title }))
-    });
-
-    // Luego filtrar por permisos de roles si están configurados
-    if (permissions) {
-      console.log('[getNavigationByPermissions] Filtrando navegación con permisos:', permissions);
-      filteredNavigation = filterNavigationByPermissions(filteredNavigation, permissions);
-      console.log('[getNavigationByPermissions] Navegación filtrada por permisos:', filteredNavigation.length, 'módulos');
+    // Admin de institución: menú completo de módulos contratados
+    if (isInstitutionAdminRole(userRole)) {
+      const permissions = await getUserPermissions(userEntityId);
+      let filteredNavigation = filterNavigationByEnabledModules(
+        getNavigationByRole(userRole),
+        enabledModuleNames
+      );
+      if (permissions) {
+        filteredNavigation = filterNavigationByPermissions(
+          filteredNavigation,
+          permissions
+        );
+      }
+      return filteredNavigation.filter(
+        (item) => item.id !== 'configuracion' && item.id !== 'plataforma'
+      );
     }
 
-    // Filtrar el módulo de configuración: solo visible para SUPER_ADMIN
-    filteredNavigation = filteredNavigation.filter(item => item.id !== 'configuracion');
-    console.log('[getNavigationByPermissions] Módulo de configuración removido (solo para SUPER_ADMIN)');
+    // Empleados / usuarios del sistema: menú según perfil de acceso
+    if (!userId) {
+      console.log('[getNavigationByPermissions] Sin userId, menú vacío');
+      return [];
+    }
+
+    const profilePerms = await getAccessProfilePermissionsForUser(
+      userId,
+      userEntityId
+    );
+    console.log('[getNavigationByPermissions] Permisos de perfil:', {
+      count: profilePerms.length,
+      modules: [...new Set(profilePerms.map((p) => p.moduleKey))],
+    });
+
+    if (!profilePerms.length) {
+      console.log(
+        '[getNavigationByPermissions] Usuario sin perfil/permisos de lectura'
+      );
+      return [];
+    }
+
+    // Base = toda la navegación (el perfil define qué ve; el rol USER no está en roles de menú)
+    let filteredNavigation = filterNavigationByEnabledModules(
+      MAIN_NAVIGATION,
+      enabledModuleNames
+    );
+    filteredNavigation = filterNavigationByAccessProfile(
+      filteredNavigation,
+      profilePerms
+    );
+    filteredNavigation = filteredNavigation.filter(
+      (item) => item.id !== 'configuracion' && item.id !== 'plataforma'
+    );
+
+    console.log('[getNavigationByPermissions] Menú por perfil:', {
+      count: filteredNavigation.length,
+      modules: filteredNavigation.map((n) => n.id),
+    });
 
     return filteredNavigation;
   } catch (error) {
     console.error('Error obteniendo navegación por permisos:', error);
-    // Fallback a navegación por rol
     try {
       const session = await getServerSession(authOptions);
       const userRole = (session?.user as any)?.role || 'Administrador';
-      const fallbackNavigation = getNavigationByRole(userRole);
-      
-      // También filtrar configuración en el fallback si no es SUPER_ADMIN
-      if (userRole !== 'SUPER_ADMIN') {
-        return fallbackNavigation.filter(item => item.id !== 'configuracion');
+      if (userRole === 'SUPER_ADMIN') {
+        return getNavigationByRole(userRole);
       }
-      
-      return fallbackNavigation;
+      return [];
     } catch {
       return [];
     }

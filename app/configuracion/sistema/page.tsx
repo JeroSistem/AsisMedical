@@ -43,10 +43,10 @@ export default function ConfiguracionSistemaPage() {
     serverDebug: false,
     
     // Configuración de base de datos
-    dbHost: 'localhost',
-    dbPort: '5432',
-    dbName: 'asismedicare',
-    dbUser: 'postgres',
+    dbHost: '127.0.0.1',
+    dbPort: '3307',
+    dbName: 'asis_medical',
+    dbUser: 'asis',
     dbMaxConnections: '100',
     dbTimeout: '30',
     dbSSL: false,
@@ -226,10 +226,10 @@ export default function ConfiguracionSistemaPage() {
         serverTimezone: 'America/Bogota',
         serverLanguage: 'es',
         serverDebug: false,
-        dbHost: 'localhost',
-        dbPort: '5432',
-        dbName: 'asismedicare',
-        dbUser: 'postgres',
+        dbHost: '127.0.0.1',
+        dbPort: '3307',
+        dbName: 'asis_medical',
+        dbUser: 'asis',
         dbMaxConnections: '100',
         dbTimeout: '30',
         dbSSL: false,
@@ -409,7 +409,7 @@ export default function ConfiguracionSistemaPage() {
                   id="dbPort"
                   value={systemSettings.dbPort}
                   onChange={(e) => handleInputChange('dbPort', e.target.value)}
-                  placeholder="5432"
+                  placeholder="3307"
                 />
               </div>
             </div>
@@ -421,7 +421,7 @@ export default function ConfiguracionSistemaPage() {
                   id="dbName"
                   value={systemSettings.dbName}
                   onChange={(e) => handleInputChange('dbName', e.target.value)}
-                  placeholder="asismedicare"
+                  placeholder="asis_medical"
                 />
               </div>
               <div className="space-y-2">
@@ -430,7 +430,7 @@ export default function ConfiguracionSistemaPage() {
                   id="dbUser"
                   value={systemSettings.dbUser}
                   onChange={(e) => handleInputChange('dbUser', e.target.value)}
-                  placeholder="postgres"
+                  placeholder="asis"
                 />
               </div>
             </div>

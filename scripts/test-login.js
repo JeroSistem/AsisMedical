@@ -1,24 +1,15 @@
-// Script para probar el login y verificar que el usuario existe
-// Uso: node scripts/test-login.js
-
-const { Pool } = require('pg');
 const bcrypt = require('bcryptjs');
 const path = require('path');
 const fs = require('fs');
+const mysql = require('mysql2/promise');
 
-// Cargar variables de entorno desde .env.local
 function loadEnv() {
   const envPath = path.join(process.cwd(), '.env.local');
   if (fs.existsSync(envPath)) {
-    const envContent = fs.readFileSync(envPath, 'utf8');
-    envContent.split('\n').forEach(line => {
+    fs.readFileSync(envPath, 'utf8').split('\n').forEach((line) => {
       const match = line.match(/^([^=]+)=(.*)$/);
-      if (match) {
-        const key = match[1].trim();
-        const value = match[2].trim();
-        if (!process.env[key]) {
-          process.env[key] = value;
-        }
+      if (match && !process.env[match[1].trim()]) {
+        process.env[match[1].trim()] = match[2].trim().replace(/^['"]|['"]$/g, '');
       }
     });
   }
@@ -27,92 +18,42 @@ function loadEnv() {
 loadEnv();
 
 async function testLogin() {
-  const connectionString = process.env.DATABASE_URL || 'postgresql://postgres:JR2026%40%40@localhost:5433/asis_medical';
-  
-  let poolConfig;
-  try {
-    const url = new URL(connectionString);
-    const password = decodeURIComponent(url.password || '');
-    
-    poolConfig = {
-      host: url.hostname,
-      port: parseInt(url.port) || 5433,
-      database: url.pathname.slice(1),
-      user: url.username,
-      password: password,
-      connectionTimeoutMillis: 10000,
-    };
-  } catch (parseError) {
-    poolConfig = {
-      connectionString: connectionString,
-      connectionTimeoutMillis: 10000,
-    };
+  const connectionString = process.env.DATABASE_URL;
+  if (!connectionString) {
+    throw new Error('DATABASE_URL no está definida');
   }
+  const url = new URL(connectionString);
+  const conn = await mysql.createConnection({
+    host: url.hostname,
+    port: parseInt(url.port || '3306', 10),
+    user: url.username,
+    password: decodeURIComponent(url.password || ''),
+    database: url.pathname.replace(/^\//, ''),
+  });
 
-  const pool = new Pool(poolConfig);
+  const testEmail = 'admin@asismedicare.com';
+  const testPassword = 'admin123';
 
   try {
-    console.log('🔌 Conectando a PostgreSQL...');
-    
-    const testEmail = 'admin@asismedicare.com';
-    const testPassword = 'admin123';
-    
-    // Buscar el usuario
-    console.log(`\n🔍 Buscando usuario: ${testEmail}`);
-    const userResult = await pool.query(
-      'SELECT id, email, password, role, name, status FROM users WHERE email = $1',
+    console.log('Conectando a MySQL/MariaDB...');
+    const [rows] = await conn.query(
+      'SELECT id, email, password, role, name, status FROM users WHERE email = ?',
       [testEmail.toLowerCase()]
     );
-    
-    if (userResult.rows.length === 0) {
-      console.log('❌ Usuario no encontrado en la base de datos');
-      console.log('\n💡 Ejecuta: npm run db:create-admin');
-      await pool.end();
+    if (!rows.length) {
+      console.log('Usuario no encontrado. Ejecuta: npm run db:seed');
       return;
     }
-    
-    const user = userResult.rows[0];
-    console.log('✅ Usuario encontrado:');
-    console.log(`   ID: ${user.id}`);
-    console.log(`   Email: ${user.email}`);
-    console.log(`   Nombre: ${user.name}`);
-    console.log(`   Rol: ${user.role}`);
-    console.log(`   Estado: ${user.status}`);
-    console.log(`   Tiene contraseña: ${user.password ? 'Sí' : 'No'}`);
-    
-    if (!user.password) {
-      console.log('\n❌ El usuario no tiene contraseña configurada');
-      await pool.end();
-      return;
-    }
-    
-    // Verificar contraseña
-    console.log(`\n🔐 Verificando contraseña...`);
-    const passwordMatch = await bcrypt.compare(testPassword, user.password);
-    
-    if (passwordMatch) {
-      console.log('✅ Contraseña correcta');
-      console.log('\n✅ El usuario puede iniciar sesión correctamente');
-    } else {
-      console.log('❌ Contraseña incorrecta');
-      console.log('\n💡 La contraseña en la BD no coincide con "admin123"');
-      console.log('💡 Puedes actualizar la contraseña ejecutando:');
-      console.log('   npm run db:create-admin');
-    }
-    
-    // Verificar estado
-    if (user.status !== 'Active') {
-      console.log(`\n⚠️  ADVERTENCIA: El usuario está en estado "${user.status}"`);
-      console.log('💡 El usuario debe estar "Active" para poder iniciar sesión');
-    }
-    
-    await pool.end();
-  } catch (err) {
-    await pool.end();
-    console.error('❌ Error:', err.message);
-    console.error('Detalle:', err.detail);
-    process.exit(1);
+    const user = rows[0];
+    const passwordMatch = await bcrypt.compare(testPassword, user.password || '');
+    console.log('Usuario:', user.email, user.role, user.status);
+    console.log('Contraseña admin123:', passwordMatch ? 'OK' : 'NO coincide');
+  } finally {
+    await conn.end();
   }
 }
 
-testLogin();
+testLogin().catch((err) => {
+  console.error('Error:', err.message);
+  process.exit(1);
+});

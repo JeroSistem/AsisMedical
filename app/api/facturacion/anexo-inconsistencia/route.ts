@@ -14,9 +14,9 @@ export async function GET(request: Request) {
     const where = q
       ? {
           OR: [
-            { paciente: { contains: q, mode: 'insensitive' } },
-            { numeroAnexo: { contains: q, mode: 'insensitive' } },
-            { docNumero: { contains: q, mode: 'insensitive' } },
+            { paciente: { contains: q } },
+            { numeroAnexo: { contains: q } },
+            { docNumero: { contains: q } },
           ],
         }
       : {}

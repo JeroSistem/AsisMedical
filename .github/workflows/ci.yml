@@ -11,19 +11,20 @@ jobs:
     runs-on: ubuntu-latest
 
     services:
-      postgres:
-        image: postgres:14
+      mysql:
+        image: mysql:8
         env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: asis_medical_test
+          MYSQL_ROOT_PASSWORD: mysql
+          MYSQL_DATABASE: asis_medical_test
+          MYSQL_USER: asis
+          MYSQL_PASSWORD: asis
         options: >-
-          --health-cmd pg_isready
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uasis -pasis"
           --health-interval 10s
           --health-timeout 5s
-          --health-retries 5
+          --health-retries 10
         ports:
-          - 5432:5432
+          - 3306:3306
 
     steps:
       - name: Checkout code
@@ -41,17 +42,17 @@ jobs:
       - name: Generate Prisma client
         run: npm run db:generate
         env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/asis_medical_test
+          DATABASE_URL: mysql://asis:asis@127.0.0.1:3306/asis_medical_test
 
       - name: Run database migrations
         run: npm run db:push
         env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/asis_medical_test
+          DATABASE_URL: mysql://asis:asis@127.0.0.1:3306/asis_medical_test
 
       - name: Build application
         run: npm run build
         env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/asis_medical_test
+          DATABASE_URL: mysql://asis:asis@127.0.0.1:3306/asis_medical_test
           NEXTAUTH_SECRET: ci-test-secret-not-for-production
           NEXTAUTH_URL: http://localhost:9002
 
@@ -63,7 +64,7 @@ jobs:
         continue-on-error: true
         run: npm run test:run
         env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/asis_medical_test
+          DATABASE_URL: mysql://asis:asis@127.0.0.1:3306/asis_medical_test
           NEXTAUTH_SECRET: ci-test-secret-not-for-production
           NEXTAUTH_URL: http://localhost:9002
 

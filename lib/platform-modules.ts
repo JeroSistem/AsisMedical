@@ -1,0 +1,21 @@
+/** Catálogo de módulos disponibles para asignar a entidades. */
+export const PLATFORM_MODULES_CATALOG = [
+  { key: 'dashboard', name: 'Dashboard', description: 'Panel principal del sistema' },
+  { key: 'administracion', name: 'Administración', description: 'Configuración del sistema (incluye Pacientes)' },
+  { key: 'facturacion', name: 'Facturación', description: 'Gestión financiera y facturación' },
+  { key: 'citas', name: 'Citas', description: 'Programación de citas médicas' },
+  { key: 'historias', name: 'Historias Clínicas', description: 'Gestión de historias médicas' },
+  { key: 'triage', name: 'Triage', description: 'Sistema de priorización' },
+  { key: 'asistencial', name: 'Asistencial', description: 'Gestión asistencial y atención médica' },
+  { key: 'inventario', name: 'Inventario', description: 'Control de inventario' },
+  { key: 'auditoria', name: 'Auditoría', description: 'Sistema de auditoría' },
+  { key: 'laboratorio', name: 'Laboratorio', description: 'Gestión de pruebas de laboratorio' },
+  { key: 'calidad', name: 'Calidad', description: 'Gestión de calidad y satisfacción del paciente' },
+  { key: 'farmacia', name: 'Farmacia', description: 'Gestión de medicamentos' },
+  { key: 'contabilidad', name: 'Contabilidad', description: 'Gestión contable' },
+  { key: 'presupuesto', name: 'Presupuesto', description: 'Gestión presupuestaria' },
+  { key: 'nomina', name: 'Nómina', description: 'Gestión de nómina' },
+  { key: 'cartera', name: 'Cartera', description: 'Gestión de cartera' },
+  { key: 'imagenes', name: 'Imágenes Diagnósticas', description: 'Gestión de imágenes médicas' },
+  { key: 'admisiones', name: 'Admisiones', description: 'Gestión de admisiones hospitalarias' },
+] as const;

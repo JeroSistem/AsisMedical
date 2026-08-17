@@ -1,4 +1,5 @@
 import type { Patient, MedicalRecord, User } from './types';
+import type { PrismaClient } from '@prisma/client';
 import { prisma } from './prisma';
 
 function logDbUnavailable(context: string, error: unknown) {
@@ -7,7 +8,7 @@ function logDbUnavailable(context: string, error: unknown) {
   // Evitar console.error con Error objects: en Next 15 dispara overlay rojo
   if (code === 'ECONNREFUSED' || message.includes('ECONNREFUSED')) {
     console.warn(
-      `[DB] ${context}: PostgreSQL no disponible (ECONNREFUSED). Revisa que el servicio esté en el puerto de DATABASE_URL.`
+      `[DB] ${context}: MySQL no disponible (ECONNREFUSED). Revisa que el servicio esté en el puerto de DATABASE_URL.`
     );
     return;
   }
@@ -239,15 +240,16 @@ export async function addUser(userData: Omit<User, 'id' | 'creationDate'>): Prom
 }
 
 // Función para verificar conexión a la base de datos
-export async function testDatabaseConnection(): Promise<boolean> {
+export async function testDatabaseConnection(
+  db: PrismaClient = prisma
+): Promise<boolean> {
   try {
-    // Verificar que prisma esté inicializado correctamente
-    if (!prisma || typeof prisma.$queryRaw === 'undefined') {
+    if (!db || typeof db.$queryRaw === 'undefined') {
       console.warn('[DB] Prisma no está inicializado correctamente');
       return false;
     }
-    
-    await prisma.$queryRaw`SELECT 1`;
+
+    await db.$queryRaw`SELECT 1`;
     return true;
   } catch (error) {
     logDbUnavailable('testDatabaseConnection', error);
@@ -255,11 +257,10 @@ export async function testDatabaseConnection(): Promise<boolean> {
   }
 }
 
-// Funciones para estadísticas del Dashboard
-export async function getDashboardStats() {
+// Funciones para estadísticas del Dashboard (scoped por BD tenant o plataforma)
+export async function getDashboardStats(db: PrismaClient = prisma) {
   try {
-    // Verificar que prisma esté inicializado correctamente
-    if (!prisma || typeof prisma.patient === 'undefined') {
+    if (!db || typeof db.patient === 'undefined') {
       console.error('Prisma no está inicializado correctamente');
       return {
         totalPatients: 0,
@@ -270,12 +271,12 @@ export async function getDashboardStats() {
         patientsByMonth: [],
       };
     }
-    
+
     const [totalPatients, totalUsers, totalMedicalRecords, patients] = await Promise.all([
-      prisma.patient.count().catch(() => 0),
-      prisma.user.count().catch(() => 0),
-      prisma.medicalRecord.count().catch(() => 0),
-      prisma.patient.findMany({
+      db.patient.count().catch(() => 0),
+      db.user.count().catch(() => 0),
+      db.medicalRecord.count().catch(() => 0),
+      db.patient.findMany({
         select: {
           id: true,
           firstName: true,
@@ -284,7 +285,7 @@ export async function getDashboardStats() {
           createdAt: true,
         },
         orderBy: { createdAt: 'desc' },
-        take: 100, // Para calcular estadísticas
+        take: 100,
       }).catch(() => []),
     ]);
 
@@ -307,18 +308,18 @@ export async function getDashboardStats() {
     // Obtener pacientes por mes
     let patientsByMonth: Array<{ month: string; count: number }> = [];
     try {
-      const patientsByMonthData = await prisma.$queryRaw<Array<{ month: Date; count: bigint }>>`
-        SELECT 
-          DATE_TRUNC('month', created_at) as month,
-          COUNT(*)::int as count
+      const patientsByMonthData = await db.$queryRaw<Array<{ month: string; count: bigint }>>`
+        SELECT
+          DATE_FORMAT(created_at, '%Y-%m-01') as month,
+          COUNT(*) as count
         FROM patients
-        WHERE created_at >= NOW() - INTERVAL '12 months'
-        GROUP BY DATE_TRUNC('month', created_at)
+        WHERE created_at >= DATE_SUB(NOW(), INTERVAL 12 MONTH)
+        GROUP BY DATE_FORMAT(created_at, '%Y-%m-01')
         ORDER BY month ASC
       `;
 
       patientsByMonth = patientsByMonthData.map(item => ({
-        month: item.month.toISOString().split('T')[0],
+        month: String(item.month).slice(0, 10),
         count: Number(item.count),
       }));
     } catch (error) {

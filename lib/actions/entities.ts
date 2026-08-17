@@ -71,11 +71,11 @@ export async function getAllModules() {
     const code = error?.code;
     const message = error?.message || 'Error al obtener los módulos';
     if (code === 'ECONNREFUSED' || String(message).includes('ECONNREFUSED')) {
-      console.warn('[DB] getAllModules: PostgreSQL no disponible (ECONNREFUSED)');
+      console.warn('[DB] getAllModules: MySQL no disponible (ECONNREFUSED)');
       return {
         success: false,
         data: [],
-        error: 'Base de datos no disponible. Inicia PostgreSQL en el puerto configurado.',
+        error: 'Base de datos no disponible. Inicia MySQL en el puerto configurado.',
       };
     }
     console.warn('[DB] getAllModules:', message);
@@ -136,7 +136,7 @@ export async function createEntity(data: CreateEntityData) {
 
       // Crear la base de datos para esta entidad ANTES de crear el usuario
       console.log(`[createEntity] Creando base de datos para entidad ${entity.id}`);
-      const dbResult = await createEntityDatabase(entity.id);
+      const dbResult = await createEntityDatabase(entity.id, { fresh: true });
       
       if (!dbResult.success) {
         throw new Error(`Error creando base de datos para la entidad: ${dbResult.error}`);
@@ -219,8 +219,8 @@ export async function createEntity(data: CreateEntityData) {
             }
           }
         } else {
-          // Si no se especifican módulos, copiar todos los módulos disponibles
-          modulesToCopy = allModulesFromMainDB;
+          // Sin módulos seleccionados: institución en ceros (sin módulos activos)
+          modulesToCopy = [];
         }
 
         // Crear los módulos en la BD de la entidad y obtener sus IDs
@@ -327,75 +327,144 @@ export async function associateModulesToEntity(
   moduleNames: string[]
 ): Promise<{ success: boolean; error?: string; associatedCount?: number }> {
   try {
-    const entityPrisma = getPrismaClientForEntity(entityId);
-    
     // Asegurar que los módulos del sistema existan en la BD principal primero
     await initializeModules();
-    
+
     // Obtener todos los módulos de la BD principal
     const allModulesFromMainDB = await prisma.module.findMany();
-    
+
     // Resolver los módulos seleccionados
-    let modulesToCopy: typeof allModulesFromMainDB = [];
-    
+    const modulesToCopy: typeof allModulesFromMainDB = [];
+
     for (const moduleName of moduleNames) {
-      const foundModule = allModulesFromMainDB.find(m => 
-        m.name.toLowerCase() === moduleName.toLowerCase() ||
-        m.name.toLowerCase().includes(moduleName.toLowerCase())
+      const foundModule = allModulesFromMainDB.find(
+        (m) =>
+          m.name.toLowerCase() === moduleName.toLowerCase() ||
+          m.name.toLowerCase().includes(moduleName.toLowerCase())
       );
-      
-      if (foundModule && !modulesToCopy.find(m => m.id === foundModule.id)) {
+
+      if (foundModule && !modulesToCopy.find((m) => m.id === foundModule.id)) {
         modulesToCopy.push(foundModule);
       }
     }
 
-    // Crear/actualizar los módulos en la BD de la entidad y obtener sus IDs
-    const moduleIdMap = new Map<string, string>();
-    
-    for (const moduleFromMain of modulesToCopy) {
-      const entityModule = await entityPrisma.module.upsert({
-        where: { name: moduleFromMain.name },
-        update: {
-          description: moduleFromMain.description,
-          status: 'ENABLED',
+    // 1) Asociar primero en BD principal (fuente de verdad del menú)
+    if (prisma && typeof prisma.entityModule !== 'undefined') {
+      await prisma.entityModule.updateMany({
+        where: {
+          entityId,
+          moduleId: { notIn: modulesToCopy.map((m) => m.id) },
         },
-        create: {
-          name: moduleFromMain.name,
-          description: moduleFromMain.description,
-          status: 'ENABLED',
-        },
+        data: { enabled: false },
       });
-      
-      moduleIdMap.set(moduleFromMain.name, entityModule.id);
-    }
 
-    // Asociar los módulos en EntityModule de la BD de la entidad
-    let associatedCount = 0;
-    for (const moduleFromMain of modulesToCopy) {
-      const entityModuleId = moduleIdMap.get(moduleFromMain.name);
-      if (entityModuleId) {
-        await entityPrisma.entityModule.upsert({
+      for (const moduleFromMain of modulesToCopy) {
+        await prisma.entityModule.upsert({
           where: {
             entityId_moduleId: {
-              entityId: entityId,
-              moduleId: entityModuleId,
+              entityId,
+              moduleId: moduleFromMain.id,
             },
           },
-          update: {
-            enabled: true,
-          },
+          update: { enabled: true },
           create: {
-            entityId: entityId,
-            moduleId: entityModuleId,
+            entityId,
+            moduleId: moduleFromMain.id,
             enabled: true,
           },
         });
-        associatedCount++;
       }
     }
-    
-    console.log(`[associateModulesToEntity] ✅ ${associatedCount} módulos asociados a entidad ${entityId}`);
-    
+
+    // 2) Espejo best-effort en BD de la entidad (solo módulos activados)
+    let associatedCount = modulesToCopy.length;
+    try {
+      // Asegurar registro de la institución en su propia BD (FK)
+      const mainEntity = await prisma.entity.findUnique({ where: { id: entityId } });
+      if (mainEntity) {
+        const entityPrisma = getPrismaClientForEntity(entityId);
+        await entityPrisma.entity.upsert({
+          where: { id: entityId },
+          update: {
+            name: mainEntity.name,
+            nit: mainEntity.nit,
+            city: mainEntity.city,
+            department: mainEntity.department,
+            phone: mainEntity.phone,
+            type: mainEntity.type,
+            status: mainEntity.status,
+            databaseName: mainEntity.databaseName,
+          },
+          create: {
+            id: mainEntity.id,
+            name: mainEntity.name,
+            nit: mainEntity.nit,
+            city: mainEntity.city,
+            department: mainEntity.department,
+            phone: mainEntity.phone,
+            type: mainEntity.type,
+            status: mainEntity.status,
+            databaseName: mainEntity.databaseName,
+          },
+        });
+
+        const moduleIdMap = new Map<string, string>();
+
+        for (const moduleFromMain of modulesToCopy) {
+          const entityModule = await entityPrisma.module.upsert({
+            where: { name: moduleFromMain.name },
+            update: {
+              description: moduleFromMain.description,
+              status: 'ENABLED',
+            },
+            create: {
+              name: moduleFromMain.name,
+              description: moduleFromMain.description,
+              status: 'ENABLED',
+            },
+          });
+          moduleIdMap.set(moduleFromMain.name, entityModule.id);
+        }
+
+        for (const moduleFromMain of modulesToCopy) {
+          const entityModuleId = moduleIdMap.get(moduleFromMain.name);
+          if (!entityModuleId) continue;
+          await entityPrisma.entityModule.upsert({
+            where: {
+              entityId_moduleId: {
+                entityId,
+                moduleId: entityModuleId,
+              },
+            },
+            update: { enabled: true },
+            create: {
+              entityId,
+              moduleId: entityModuleId,
+              enabled: true,
+            },
+          });
+        }
+
+        const selectedEntityIds = Array.from(moduleIdMap.values());
+        await entityPrisma.entityModule.updateMany({
+          where: {
+            entityId,
+            moduleId: { notIn: selectedEntityIds },
+          },
+          data: { enabled: false },
+        });
+      }
+    } catch (mirrorError) {
+      console.warn(
+        '[associateModulesToEntity] Espejo en BD entidad falló (menú usa BD principal):',
+        mirrorError
+      );
+    }
+
+    console.log(
+      `[associateModulesToEntity] ✅ ${associatedCount} módulos asociados a entidad ${entityId}`
+    );
+
     return { success: true, associatedCount };
   } catch (error: any) {
     console.error('[associateModulesToEntity] Error:', error);
@@ -472,11 +541,11 @@ export async function getAllEntities() {
     const code = error?.code;
     const message = error?.message || 'Error al obtener las instituciones';
     if (code === 'ECONNREFUSED' || String(message).includes('ECONNREFUSED')) {
-      console.warn('[DB] getAllEntities: PostgreSQL no disponible (ECONNREFUSED)');
+      console.warn('[DB] getAllEntities: MySQL no disponible (ECONNREFUSED)');
       return {
         success: false,
         data: [],
-        error: 'Base de datos no disponible. Inicia PostgreSQL en el puerto configurado.',
+        error: 'Base de datos no disponible. Inicia MySQL en el puerto configurado.',
       };
     }
     console.warn('[DB] getAllEntities:', message);

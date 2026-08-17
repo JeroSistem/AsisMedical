@@ -326,7 +326,6 @@ export async function findEntityByName(name: string) {
       where: {
         name: {
           contains: name,
-          mode: 'insensitive',
         },
       },
     });

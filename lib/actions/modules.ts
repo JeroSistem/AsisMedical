@@ -12,27 +12,11 @@ export async function initializeModules() {
       return { success: false, error: 'Base de datos no disponible' };
     }
 
-    const modulesToCreate = [
-      { name: 'Dashboard', description: 'Panel principal del sistema' },
-      { name: 'Pacientes', description: 'Gestión de pacientes' },
-      { name: 'Administración', description: 'Configuración del sistema' },
-      { name: 'Facturación', description: 'Gestión financiera y facturación' },
-      { name: 'Citas', description: 'Programación de citas médicas' },
-      { name: 'Historias Clínicas', description: 'Gestión de historias médicas' },
-      { name: 'Triage', description: 'Sistema de priorización' },
-      { name: 'Asistencial', description: 'Gestión asistencial y atención médica' },
-      { name: 'Inventario', description: 'Control de inventario' },
-      { name: 'Auditoría', description: 'Sistema de auditoría' },
-      { name: 'Laboratorio', description: 'Gestión de pruebas de laboratorio' },
-      { name: 'Calidad', description: 'Gestión de calidad y satisfacción del paciente' },
-      { name: 'Farmacia', description: 'Gestión de medicamentos' },
-      { name: 'Contabilidad', description: 'Gestión contable' },
-      { name: 'Presupuesto', description: 'Gestión presupuestaria' },
-      { name: 'Nómina', description: 'Gestión de nómina' },
-      { name: 'Cartera', description: 'Gestión de cartera' },
-      { name: 'Imágenes Diagnósticas', description: 'Gestión de imágenes médicas' },
-      { name: 'Configuración General', description: 'Configuración general del sistema' },
-    ];
+    const { PLATFORM_MODULES_CATALOG } = await import('@/lib/platform-modules');
+    const modulesToCreate = PLATFORM_MODULES_CATALOG.map((m) => ({
+      name: m.name,
+      description: m.description,
+    }));
 
     const createdModules = [];
     const existingModules = [];
@@ -88,7 +72,6 @@ export async function findOrCreateModule(name: string, description?: string) {
       where: {
         name: {
           equals: name,
-          mode: 'insensitive',
         },
       },
     });
@@ -99,7 +82,6 @@ export async function findOrCreateModule(name: string, description?: string) {
         where: {
           name: {
             contains: name,
-            mode: 'insensitive',
           },
         },
       });
@@ -138,7 +120,6 @@ export async function findModuleByName(name: string) {
       where: {
         name: {
           equals: name,
-          mode: 'insensitive',
         },
       },
     });
@@ -149,7 +130,6 @@ export async function findModuleByName(name: string) {
         where: {
           name: {
             contains: name,
-            mode: 'insensitive',
           },
         },
       });

@@ -8,7 +8,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
 }
 
 // ============================================
@@ -63,6 +63,7 @@ model VerificationToken {
 model User {
   id            String    @id @default(cuid())
   name          String
+  username      String?   @unique @map("username")
   email         String    @unique
   emailVerified DateTime? @map("emailVerified")
   password      String?
@@ -78,9 +79,12 @@ model User {
   adminEntities   Entity[]         @relation("entities_admin_user_idTousers")
   accounts        Account[]
   sessions        Session[]
+  accessProfileId String?          @map("access_profile_id")
+  accessProfile   AccessProfile?   @relation("users_access_profile", fields: [accessProfileId], references: [id], onDelete: SetNull)
   userPermissions UserPermission[]
 
   @@index([email])
+  @@index([username])
   @@index([entityId])
   @@map("users")
 }
@@ -88,6 +92,10 @@ model User {
 model Entity {
   id           String       @id @default(cuid())
   name         String       @unique
+  nit          String?      @unique
+  city         String?      @map("city")
+  department   String?      @map("department")
+  phone        String?      @map("phone")
   type         EntityType
   status       EntityStatus @default(ACTIVE)
   adminUserId  String?      @map("admin_user_id")
@@ -100,8 +108,11 @@ model Entity {
   patients             Patient[]
   entityModules        EntityModule[]
   systemConfigurations SystemConfiguration[]
+  partnerContracts     PartnerContract[]
+  accessProfiles       AccessProfile[]
 
   @@index([status])
+  @@index([nit])
   @@map("entities")
 }
 
@@ -268,6 +279,29 @@ model Patient {
   activeProblems      String? @map("active_problems")
   initialObservations String? @map("initial_observations")
 
+  // Enfoque diferencial (opcionales; pueden quedar en blanco / null)
+  orientacionSexual          String? @map("orientacion_sexual")
+  religion                   String?
+  consumoSpa                 String? @map("consumo_spa")
+  gestacion                  String?
+  habitanteCalle             String? @map("habitante_calle")
+  resguardoIndigena          String? @map("resguardo_indigena")
+  victimaConflicto           String? @map("victima_conflicto")
+  minasAntipersona          String? @map("minas_antipersona")
+  minasMunicionSinExplotar   String? @map("minas_municion_sin_explotar")
+  desplazado                 String?
+  ruv                        String?
+  victimaMaltrato            String? @map("victima_maltrato")
+  abandonoSocial             String? @map("abandono_social")
+  carcelario                 String?
+  poblacionLgbti             String? @map("poblacion_lgbti")
+  desempleado                String?
+  mujerConNinoMenorUnAnio    String? @map("mujer_con_nino_menor_un_anio")
+  adultoMayor                String? @map("adulto_mayor")
+  migrante                   String?
+  desescolarizado            String?
+  trabajadoraSexual          String? @map("trabajadora_sexual")
+
   // Admisión
   createAdmission Boolean   @default(false) @map("create_admission")
   admissionDate   DateTime? @map("admission_date")
@@ -308,10 +342,48 @@ model Patient {
 model MedicalRecord {
   id                    String   @id @default(cuid())
   patientId             String   @map("patient_id")
-  medicalHistory        String?  @map("medical_history") @db.Text
-  currentStatus         String?  @map("current_status")
+  admissionId           String?  @map("admission_id")
   admissionNumber       String   @unique @map("admission_number")
   clinicalHistoryNumber String   @unique @map("clinical_history_number")
+
+  // Motivo y antecedentes
+  consultationReason    String?  @map("consultation_reason") @db.Text
+  medicalHistory        String?  @map("medical_history") @db.Text
+  surgicalHistory       String?  @map("surgical_history") @db.Text
+  familyHistory         String?  @map("family_history") @db.Text
+  habits                String?  @db.Text
+  currentIllnessHistory String?  @map("current_illness_history") @db.Text
+
+  // Examen físico / signos
+  bloodPressure         String?  @map("blood_pressure")
+  heartRate             String?  @map("heart_rate")
+  temperature           String?
+  oxygenSaturation      String?  @map("oxygen_saturation")
+  physicalExam          String?  @map("physical_exam") @db.Text
+
+  // Diagnóstico y plan
+  diagnosis             String?  @db.Text
+  medications           String?  @db.Text
+  complementaryStudies  String?  @map("complementary_studies") @db.Text
+  recommendations       String?  @db.Text
+  evolution             String?  @db.Text
+  currentStatus         String?  @map("current_status")
+
+  // Profesional
+  professionalName      String?  @map("professional_name")
+  professionalLicense   String?  @map("professional_license")
+
+  // Snapshot de paciente al momento de la atención
+  patientName           String?  @map("patient_name")
+  patientAge            Int?     @map("patient_age")
+  patientGender         String?  @map("patient_gender")
+  patientIdentification String?  @map("patient_identification")
+  patientAddress        String?  @map("patient_address")
+  patientPhone          String?  @map("patient_phone")
+  patientEmail          String?  @map("patient_email")
+  patientOccupation     String?  @map("patient_occupation")
+  patientInsurance      String?  @map("patient_insurance")
+
   createdAt             DateTime @default(now()) @map("created_at")
   updatedAt             DateTime @updatedAt @map("updated_at")
 
@@ -321,6 +393,8 @@ model MedicalRecord {
   documents  MedicalDocument[]
 
   @@index([patientId])
+  @@index([admissionId])
+  @@index([clinicalHistoryNumber])
   @@index([createdAt])
   @@map("medical_records")
 }
@@ -395,6 +469,7 @@ model Appointment {
 
 model PatientAdmission {
   id                      String   @id @default(cuid())
+  admissionNumber         Int      @unique @map("admission_number")
   patientId               String   @map("patient_id")
   admissionDate           DateTime @map("admission_date")
   admissionTime           String   @map("admission_time")
@@ -425,6 +500,7 @@ model PatientAdmission {
   patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
 
   @@index([patientId])
+  @@index([admissionNumber])
   @@map("patient_admissions")
 }
 
@@ -469,7 +545,7 @@ model TriageAssessment {
   mainSymptom         String?  @map("mainSymptom")
   symptomDuration     String?  @map("symptomDuration")
   associatedSymptoms  String?  @map("associatedSymptoms")
-  riskFactors         String[]
+  riskFactors         Json     @default("[]")
   urgencyLevel        String   @map("urgency_level")
   triageCategory      String   @map("triage_category")
   estimatedWaitTime   String   @map("estimated_wait_time")
@@ -487,4 +563,86 @@ model TriageAssessment {
   @@index([urgencyLevel])
   @@index([createdAt])
   @@map("triage_assessments")
+}
+
+/// Contratos / convenios con entidades externas (EPS, IPS, etc.) por institución
+model PartnerContract {
+  id                   String    @id @default(cuid())
+  entityId             String    @map("entity_id")
+  contractNumber       String    @map("contract_number")
+  partnerName          String    @map("partner_name")
+  partnerType          String?   @map("partner_type")
+  legalRepresentative  String?   @map("legal_representative")
+  nit                  String?
+  address              String?
+  phone                String?
+  email                String?
+  startDate            DateTime? @map("start_date")
+  endDate              DateTime? @map("end_date")
+  contractValue        String?   @map("contract_value")
+  currency             String    @default("COP")
+  contractType         String?   @map("contract_type") // subsidiado | contributivo
+  includedServices     String?   @map("included_services") @db.Text
+  exclusions           String?   @db.Text
+  geographicCoverage   String?   @map("geographic_coverage")
+  targetPopulation     String?   @map("target_population")
+  paymentTermDays      String?   @map("payment_term_days")
+  paymentMethod        String?   @map("payment_method")
+  guarantees           String?   @db.Text
+  penalties            String?   @db.Text
+  requiredDocuments    String?   @map("required_documents") @db.Text
+  observations         String?   @db.Text
+  status               String    @default("activo")
+  active               Boolean   @default(true)
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime  @updatedAt @map("updated_at")
+
+  entity Entity @relation(fields: [entityId], references: [id], onDelete: Cascade)
+
+  @@unique([entityId, contractNumber])
+  @@index([entityId])
+  @@index([partnerName])
+  @@index([status])
+  @@index([contractType])
+  @@map("partner_contracts")
+}
+
+/// Perfiles de acceso por institución (permisos sobre módulos/submódulos contratados)
+model AccessProfile {
+  id          String   @id @default(cuid())
+  entityId    String   @map("entity_id")
+  name        String
+  description String?  @db.Text
+  status      String   @default("Active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  entity      Entity                   @relation(fields: [entityId], references: [id], onDelete: Cascade)
+  permissions AccessProfilePermission[]
+  users       User[]                   @relation("users_access_profile")
+
+  @@unique([entityId, name])
+  @@index([entityId])
+  @@index([status])
+  @@map("access_profiles")
+}
+
+model AccessProfilePermission {
+  id          String  @id @default(cuid())
+  profileId   String  @map("profile_id")
+  /// ID de navegación del módulo (ej. admin, triage, facturacion)
+  moduleKey   String  @map("module_key")
+  /// ID de navegación del submódulo; vacío = permiso a nivel módulo
+  submoduleKey String @default("") @map("submodule_key")
+  canRead     Boolean @default(true) @map("can_read")
+  canCreate   Boolean @default(false) @map("can_create")
+  canUpdate   Boolean @default(false) @map("can_update")
+  canDelete   Boolean @default(false) @map("can_delete")
+
+  profile AccessProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@unique([profileId, moduleKey, submoduleKey])
+  @@index([profileId])
+  @@index([moduleKey])
+  @@map("access_profile_permissions")
 }

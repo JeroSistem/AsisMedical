@@ -18,6 +18,8 @@ interface PatientFormSimpleProps {
   initialData?: Partial<PatientFormData>;
   isEditing?: boolean;
   patientId?: string;
+  /** Si se define, no redirige: útil para dejar el paciente de prueba cargado. */
+  onSaved?: (patientId: string, mode: 'create' | 'update') => void;
 }
 
 const documentTypes = [
@@ -28,9 +30,9 @@ const documentTypes = [
 ];
 
 const genders = [
-  { value: 'male', label: 'Masculino' },
-  { value: 'female', label: 'Femenino' },
-  { value: 'other', label: 'Otro' },
+  { value: 'masculino', label: 'Masculino' },
+  { value: 'femenino', label: 'Femenino' },
+  { value: 'no definido', label: 'No definido' },
 ];
 
 const initialFormData: PatientFormData = {
@@ -56,7 +58,12 @@ const initialFormData: PatientFormData = {
   createAdmission: false,
 };
 
-export function PatientFormSimple({ initialData, isEditing = false, patientId }: PatientFormSimpleProps) {
+export function PatientFormSimple({
+  initialData,
+  isEditing = false,
+  patientId,
+  onSaved,
+}: PatientFormSimpleProps) {
   const [formData, setFormData] = useState<PatientFormData>({ ...initialFormData, ...initialData });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [age, setAge] = useState<number | null>(null);
@@ -137,14 +144,22 @@ export function PatientFormSimple({ initialData, isEditing = false, patientId }:
       }
 
       if (result.success) {
+        const savedId =
+          (result as { patient?: { id?: string } }).patient?.id || patientId || '';
         toast({
-          title: "Éxito",
-          description: isEditing ? 'Paciente actualizado exitosamente' : 'Paciente creado exitosamente',
+          title: 'Éxito',
+          description: isEditing
+            ? 'Paciente actualizado en la base de datos'
+            : 'Paciente creado en la base de datos',
         });
 
-        setTimeout(() => {
-          router.push('/patients');
-        }, 1500);
+        if (onSaved && savedId) {
+          onSaved(savedId, isEditing ? 'update' : 'create');
+        } else {
+          setTimeout(() => {
+            router.push('/patients');
+          }, 1200);
+        }
       } else {
         toast({
           title: "Error",
