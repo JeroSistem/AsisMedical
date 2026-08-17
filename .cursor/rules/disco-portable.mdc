@@ -1,11 +1,12 @@
 ---
-description: El proyecto vive en este equipo. Instalar dependencias en la carpeta del proyecto.
+description: El proyecto vive en el Escritorio local de este equipo. Instalar dependencias en la carpeta del proyecto.
 alwaysApply: true
 ---
 
 # Este equipo
 
-- El proyecto vive en `C:\Users\neder\OneDrive\Desktop\ASIS-MEDICAL`.
-- `npm install` y `node_modules` deben quedar en esa carpeta.
+- El proyecto vive en el **Escritorio local** de este PC (carpeta `ASIS-MEDICAL`).
+- No usar disco portable `D:` ni copiar el proyecto a otra unidad.
+- `npm install` y `node_modules` deben quedar en la carpeta del proyecto abierta en Cursor.
 - MySQL local: `127.0.0.1:3306`, base `asis_medical`.
 - Node.js 20 (rango del proyecto: `>=18.18 <21`).
