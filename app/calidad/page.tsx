@@ -1,8 +1,10 @@
 'use client';
 
+import { SubmoduleFormPage } from '@/components/shared/submodule-form-page';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { EmptyStatBlock, NoDataMessage } from '@/components/shared/no-data-message';
 import { Star, Target, TrendingUp, Award, CheckCircle } from 'lucide-react';
 
 export default function CalidadPage() {
@@ -28,10 +30,7 @@ export default function CalidadPage() {
             <Target className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">95.2%</div>
-            <p className="text-xs text-muted-foreground">
-              Cumplimiento general
-            </p>
+            <EmptyStatBlock />
           </CardContent>
         </Card>
 
@@ -41,10 +40,7 @@ export default function CalidadPage() {
             <Star className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">28</div>
-            <p className="text-xs text-muted-foreground">
-              Este mes
-            </p>
+            <EmptyStatBlock />
           </CardContent>
         </Card>
 
@@ -54,10 +50,7 @@ export default function CalidadPage() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">+12.5%</div>
-            <p className="text-xs text-muted-foreground">
-              Desde el mes pasado
-            </p>
+            <EmptyStatBlock />
           </CardContent>
         </Card>
 
@@ -67,10 +60,7 @@ export default function CalidadPage() {
             <Award className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">8</div>
-            <p className="text-xs text-muted-foreground">
-              Certificaciones activas
-            </p>
+            <EmptyStatBlock />
           </CardContent>
         </Card>
       </div>
@@ -86,37 +76,7 @@ export default function CalidadPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {[
-                { name: 'Satisfacción del Paciente', value: 94.5, target: 90, status: 'Excelente' },
-                { name: 'Tiempo de Espera', value: 87.2, target: 85, status: 'Bueno' },
-                { name: 'Precisión Diagnóstica', value: 96.8, target: 95, status: 'Excelente' },
-                { name: 'Cumplimiento Protocolos', value: 92.1, target: 90, status: 'Bueno' },
-                { name: 'Seguridad del Paciente', value: 98.3, target: 95, status: 'Excelente' }
-              ].map((item, index) => (
-                <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                      item.value >= item.target ? 'bg-green-100' : 'bg-red-100'
-                    }`}>
-                      <Target className={`w-4 h-4 ${
-                        item.value >= item.target ? 'text-green-600' : 'text-red-600'
-                      }`} />
-                    </div>
-                    <div>
-                      <p className="font-medium">{item.name}</p>
-                      <p className="text-sm text-gray-500">Meta: {item.target}%</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-medium">{item.value}%</p>
-                    <Badge variant={item.value >= item.target ? 'default' : 'destructive'}>
-                      {item.status}
-                    </Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <NoDataMessage />
           </CardContent>
         </Card>
 
@@ -129,41 +89,7 @@ export default function CalidadPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {[
-                { area: 'Atención al Paciente', score: 95, evaluator: 'Dr. García', date: '2024-01-15' },
-                { area: 'Procedimientos Médicos', score: 92, evaluator: 'Dra. López', date: '2024-01-14' },
-                { area: 'Documentación', score: 88, evaluator: 'Dr. Martínez', date: '2024-01-13' },
-                { area: 'Seguridad', score: 97, evaluator: 'Dra. Rodríguez', date: '2024-01-12' },
-                { area: 'Equipos Médicos', score: 94, evaluator: 'Dr. Pérez', date: '2024-01-11' }
-              ].map((item, index) => (
-                <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                      item.score >= 90 ? 'bg-green-100' : 
-                      item.score >= 80 ? 'bg-yellow-100' : 'bg-red-100'
-                    }`}>
-                      <Star className={`w-4 h-4 ${
-                        item.score >= 90 ? 'text-green-600' : 
-                        item.score >= 80 ? 'text-yellow-600' : 'text-red-600'
-                      }`} />
-                    </div>
-                    <div>
-                      <p className="font-medium">{item.area}</p>
-                      <p className="text-sm text-gray-500">{item.evaluator} • {item.date}</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-medium">{item.score}/100</p>
-                    <Badge variant={item.score >= 90 ? 'default' : 
-                                  item.score >= 80 ? 'secondary' : 'destructive'}>
-                      {item.score >= 90 ? 'Excelente' : 
-                       item.score >= 80 ? 'Bueno' : 'Necesita Mejora'}
-                    </Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <NoDataMessage />
           </CardContent>
         </Card>
       </div>
@@ -197,6 +123,15 @@ export default function CalidadPage() {
           </div>
         </CardContent>
       </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>Formulario del módulo</CardTitle>
+          <CardDescription>Registro y parametrización</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <SubmoduleFormPage href="/calidad" embedded />
+        </CardContent>
+      </Card>
     </div>
   );
-} 
+}

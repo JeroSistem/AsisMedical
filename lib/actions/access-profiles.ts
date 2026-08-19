@@ -128,17 +128,143 @@ export async function getModulesForProfiles() {
   }
 }
 
+function flattenModulePermissions(nodes: ModuleTreeNode[]): ProfilePermissionInput[] {
+  const permissions: ProfilePermissionInput[] = [];
+  for (const node of nodes) {
+    permissions.push({
+      moduleKey: node.id,
+      submoduleKey: '',
+      canRead: true,
+      canCreate: true,
+      canUpdate: true,
+      canDelete: true,
+    });
+    for (const child of node.children || []) {
+      permissions.push({
+        moduleKey: node.id,
+        submoduleKey: child.id,
+        canRead: true,
+        canCreate: true,
+        canUpdate: true,
+        canDelete: true,
+      });
+    }
+  }
+  return permissions;
+}
+
+async function modulesTreeForEntity(entityId: string): Promise<ModuleTreeNode[]> {
+  const enabled = await getEnabledModulesForEntity(entityId);
+  return MAIN_NAVIGATION.filter((item) => {
+    if (item.id === 'plataforma' || item.id === 'configuracion') return false;
+    if (enabled.size === 0) {
+      return item.id === 'dashboard' || item.id === 'admin';
+    }
+    return isModuleEnabledForEntity(item.id, enabled);
+  }).map(toTreeNode);
+}
+
+/**
+ * Crea el perfil "Administrador" si la institución no tiene ninguno.
+ * Así se puede registrar usuarios sin pasar primero por Roles / Perfiles.
+ */
+export async function ensureDefaultAccessProfiles(entityId: string): Promise<{
+  success: boolean;
+  created: boolean;
+  error?: string;
+}> {
+  try {
+    const client = await ensureAccessProfileTables(entityId);
+    await syncEntityRow(entityId, client);
+
+    const existing = await client.accessProfile.count({
+      where: { entityId, status: 'Active' },
+    });
+    if (existing > 0) {
+      return { success: true, created: false };
+    }
+
+    const tree = await modulesTreeForEntity(entityId);
+    let permissions = flattenModulePermissions(tree);
+    if (!permissions.length) {
+      permissions = [
+        {
+          moduleKey: 'dashboard',
+          submoduleKey: '',
+          canRead: true,
+          canCreate: true,
+          canUpdate: true,
+          canDelete: true,
+        },
+        {
+          moduleKey: 'admin',
+          submoduleKey: '',
+          canRead: true,
+          canCreate: true,
+          canUpdate: true,
+          canDelete: true,
+        },
+      ];
+    }
+
+    await client.accessProfile.create({
+      data: {
+        entityId,
+        name: 'Administrador',
+        description: 'Acceso completo a los módulos contratados de la institución',
+        status: 'Active',
+        permissions: {
+          create: permissions.map((p) => ({
+            moduleKey: p.moduleKey,
+            submoduleKey: p.submoduleKey || '',
+            canRead: p.canRead ?? true,
+            canCreate: p.canCreate ?? true,
+            canUpdate: p.canUpdate ?? true,
+            canDelete: p.canDelete ?? true,
+          })),
+        },
+      },
+    });
+
+    return { success: true, created: true };
+  } catch (error: any) {
+    console.error('ensureDefaultAccessProfiles:', error);
+    return {
+      success: false,
+      created: false,
+      error: error?.message || 'No se pudo crear el perfil por defecto',
+    };
+  }
+}
+
+export async function ensureDefaultAccessProfilesForCurrentInstitution() {
+  const gate = await requireInstitutionAdmin();
+  if (!gate.ok) return { success: false, created: false, error: gate.error };
+  return ensureDefaultAccessProfiles(gate.entityId);
+}
+
 export async function listAccessProfiles() {
   const gate = await requireInstitutionAdmin();
   if (!gate.ok) return { success: false, data: [], error: gate.error };
 
   try {
     const client = await ensureAccessProfileTables(gate.entityId);
-    const rows = await client.accessProfile.findMany({
+    let rows = await client.accessProfile.findMany({
       where: { entityId: gate.entityId },
       include: { permissions: true },
       orderBy: { name: 'asc' },
     });
+
+    if (rows.length === 0) {
+      const seeded = await ensureDefaultAccessProfiles(gate.entityId);
+      if (seeded.success) {
+        rows = await client.accessProfile.findMany({
+          where: { entityId: gate.entityId },
+          include: { permissions: true },
+          orderBy: { name: 'asc' },
+        });
+      }
+    }
 
     return {
       success: true,

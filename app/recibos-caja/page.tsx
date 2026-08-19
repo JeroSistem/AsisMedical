@@ -1,8 +1,10 @@
 'use client';
 
+import { SubmoduleFormPage } from '@/components/shared/submodule-form-page';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { EmptyStatBlock, NoDataMessage } from '@/components/shared/no-data-message';
 import { Receipt, DollarSign, TrendingUp, Clock } from 'lucide-react';
 
 export default function RecibosCajaPage() {
@@ -28,8 +30,7 @@ export default function RecibosCajaPage() {
             <Receipt className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">1,234</div>
-            <p className="text-xs text-muted-foreground">+12% del mes anterior</p>
+            <EmptyStatBlock />
           </CardContent>
         </Card>
 
@@ -39,8 +40,7 @@ export default function RecibosCajaPage() {
             <DollarSign className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">$45,678</div>
-            <p className="text-xs text-muted-foreground">+8% del mes anterior</p>
+            <EmptyStatBlock />
           </CardContent>
         </Card>
 
@@ -50,8 +50,7 @@ export default function RecibosCajaPage() {
             <TrendingUp className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">$37.02</div>
-            <p className="text-xs text-muted-foreground">+5% del mes anterior</p>
+            <EmptyStatBlock />
           </CardContent>
         </Card>
 
@@ -61,8 +60,7 @@ export default function RecibosCajaPage() {
             <Clock className="h-4 w-4 text-orange-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">23</div>
-            <p className="text-xs text-muted-foreground">Por procesar</p>
+            <EmptyStatBlock />
           </CardContent>
         </Card>
       </div>
@@ -76,23 +74,7 @@ export default function RecibosCajaPage() {
             <CardDescription>Últimos recibos generados</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {[1, 2, 3, 4, 5].map((item) => (
-                <div key={item} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <Receipt className="h-5 w-5 text-green-600" />
-                    <div>
-                      <p className="font-medium">Recibo #{1000 + item}</p>
-                      <p className="text-sm text-gray-500">Paciente {item}</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-medium">${(item * 25.50).toFixed(2)}</p>
-                    <Badge variant="secondary">Completado</Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <NoDataMessage />
           </CardContent>
         </Card>
 
@@ -124,6 +106,15 @@ export default function RecibosCajaPage() {
           </CardContent>
         </Card>
       </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Formulario del módulo</CardTitle>
+          <CardDescription>Registro y parametrización</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <SubmoduleFormPage href="/facturacion/administracion/recibos-caja" embedded />
+        </CardContent>
+      </Card>
     </div>
   );
-} 
+}

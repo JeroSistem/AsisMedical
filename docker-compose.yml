@@ -1,8 +1,28 @@
 version: '3.9'
 
 services:
+  db:
+    image: mysql:8.4
+    container_name: AsisMediCare_db
+    environment:
+      - MYSQL_DATABASE=asis_medical
+      - MYSQL_USER=asis
+      - MYSQL_PASSWORD=asis_mysql_dev
+      - MYSQL_ROOT_PASSWORD=asis_mysql_dev
+    ports:
+      - '3306:3306'
+    volumes:
+      - asis_medical_db_data:/var/lib/mysql
+    healthcheck:
+      test: ['CMD', 'mysqladmin', 'ping', '-h', '127.0.0.1', '--silent']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
   web:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
     container_name: AsisMediCare_web
     env_file: .env.local
     ports:
@@ -11,6 +31,14 @@ services:
       - .:/app
       - /app/node_modules
       - /app/.next
+    depends_on:
+      db:
+        condition: service_healthy
     environment:
       - NODE_ENV=development
-    command: npm run dev
+      - DATABASE_URL=mysql://asis:asis_mysql_dev@db:3306/asis_medical
+      - NEXTAUTH_URL=http://localhost:9002
+    command: npx next dev -H 0.0.0.0 -p 9002
+
+volumes:
+  asis_medical_db_data:

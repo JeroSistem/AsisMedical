@@ -1,8 +1,10 @@
 'use client';
 
+import { SubmoduleFormPage } from '@/components/shared/submodule-form-page';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { EmptyStatBlock, NoDataMessage } from '@/components/shared/no-data-message';
 import { BarChart3, TrendingUp, Users, Calendar } from 'lucide-react';
 
 export default function FuripsPage() {
@@ -28,8 +30,7 @@ export default function FuripsPage() {
             <BarChart3 className="h-4 w-4 text-amber-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">2,345</div>
-            <p className="text-xs text-muted-foreground">+67 este mes</p>
+            <EmptyStatBlock />
           </CardContent>
         </Card>
 
@@ -39,8 +40,7 @@ export default function FuripsPage() {
             <Users className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">1,890</div>
-            <p className="text-xs text-muted-foreground">Este período</p>
+            <EmptyStatBlock />
           </CardContent>
         </Card>
 
@@ -50,8 +50,7 @@ export default function FuripsPage() {
             <TrendingUp className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">+8.5%</div>
-            <p className="text-xs text-muted-foreground">vs período anterior</p>
+            <EmptyStatBlock />
           </CardContent>
         </Card>
 
@@ -61,8 +60,7 @@ export default function FuripsPage() {
             <Calendar className="h-4 w-4 text-purple-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">Hoy</div>
-            <p className="text-xs text-muted-foreground">Actualizado</p>
+            <EmptyStatBlock />
           </CardContent>
         </Card>
       </div>
@@ -76,23 +74,7 @@ export default function FuripsPage() {
             <CardDescription>Últimos reportes FURIPS generados</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {[1, 2, 3, 4, 5].map((item) => (
-                <div key={item} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <BarChart3 className="h-5 w-5 text-amber-600" />
-                    <div>
-                      <p className="font-medium">Reporte #{5000 + item}</p>
-                      <p className="text-sm text-gray-500">Período {item}</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm text-gray-500">2024-01-{item.toString().padStart(2, '0')}</p>
-                    <Badge variant="secondary">Completado</Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <NoDataMessage />
           </CardContent>
         </Card>
 
@@ -124,6 +106,15 @@ export default function FuripsPage() {
           </CardContent>
         </Card>
       </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Formulario del módulo</CardTitle>
+          <CardDescription>Registro y parametrización</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <SubmoduleFormPage href="/facturacion/administracion/furips" embedded />
+        </CardContent>
+      </Card>
     </div>
   );
-} 
+}

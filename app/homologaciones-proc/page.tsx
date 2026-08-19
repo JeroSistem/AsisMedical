@@ -1,8 +1,10 @@
 'use client';
 
+import { SubmoduleFormPage } from '@/components/shared/submodule-form-page';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { EmptyStatBlock, NoDataMessage } from '@/components/shared/no-data-message';
 import { FlaskConical, CheckCircle, Clock, AlertTriangle } from 'lucide-react';
 
 export default function HomologacionesProcPage() {
@@ -28,8 +30,7 @@ export default function HomologacionesProcPage() {
             <FlaskConical className="h-4 w-4 text-purple-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">342</div>
-            <p className="text-xs text-muted-foreground">+15 este mes</p>
+            <EmptyStatBlock />
           </CardContent>
         </Card>
 
@@ -39,8 +40,7 @@ export default function HomologacionesProcPage() {
             <CheckCircle className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">298</div>
-            <p className="text-xs text-muted-foreground">87% de aprobación</p>
+            <EmptyStatBlock />
           </CardContent>
         </Card>
 
@@ -50,8 +50,7 @@ export default function HomologacionesProcPage() {
             <Clock className="h-4 w-4 text-orange-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">23</div>
-            <p className="text-xs text-muted-foreground">En revisión</p>
+            <EmptyStatBlock />
           </CardContent>
         </Card>
 
@@ -61,8 +60,7 @@ export default function HomologacionesProcPage() {
             <AlertTriangle className="h-4 w-4 text-red-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">21</div>
-            <p className="text-xs text-muted-foreground">Requieren corrección</p>
+            <EmptyStatBlock />
           </CardContent>
         </Card>
       </div>
@@ -76,23 +74,7 @@ export default function HomologacionesProcPage() {
             <CardDescription>Últimas homologaciones procesadas</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {[1, 2, 3, 4, 5].map((item) => (
-                <div key={item} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <FlaskConical className="h-5 w-5 text-purple-600" />
-                    <div>
-                      <p className="font-medium">Proc #{3000 + item}</p>
-                      <p className="text-sm text-gray-500">Procedimiento {item}</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm text-gray-500">Dr. García</p>
-                    <Badge variant="secondary">Aprobado</Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <NoDataMessage />
           </CardContent>
         </Card>
 
@@ -124,6 +106,15 @@ export default function HomologacionesProcPage() {
           </CardContent>
         </Card>
       </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Formulario del módulo</CardTitle>
+          <CardDescription>Registro y parametrización</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <SubmoduleFormPage href="/facturacion/administracion/homologaciones-proc" embedded />
+        </CardContent>
+      </Card>
     </div>
   );
-} 
+}

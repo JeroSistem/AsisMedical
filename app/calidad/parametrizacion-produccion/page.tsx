@@ -19,19 +19,8 @@ interface ProcedimientoCUPS {
   nombre: string;
 }
 
-// Datos de ejemplo de procedimientos CUPS
-const mockProcedimientos: ProcedimientoCUPS[] = [
-  { codigoSubGrupo: '11', nombre: 'Número Casos de biologicos aplicados' },
-  { codigoSubGrupo: '12', nombre: 'Número de Controles de Enfermeria (atencion Prenatal, Crecimiento y desarrollo)' },
-  { codigoSubGrupo: '13', nombre: 'Número Citologias Cervicouterinas tomadas' },
-  { codigoSubGrupo: '21', nombre: 'Número Consultas de medicina general externas' },
-  { codigoSubGrupo: '22', nombre: 'Número Consultas de medicina general urgencias' },
-  { codigoSubGrupo: '23', nombre: 'Número Consultas de medicina especializada' },
-  { codigoSubGrupo: '24', nombre: 'Otras consultas electivas realizadas por profesionales diferentes a médico, enfermero u odontólogo' },
-  { codigoSubGrupo: '31', nombre: 'Número Consultas de odontologia' },
-  { codigoSubGrupo: '32', nombre: 'Número Sellantes aplicados' },
-  { codigoSubGrupo: '33', nombre: 'Número Superficies obturadas (cualquier material)' },
-];
+// Sin datos hasta integración con BD
+const mockProcedimientos: ProcedimientoCUPS[] = [];
 
 export default function ParametrizacionProduccionPage() {
   const { toast } = useToast();

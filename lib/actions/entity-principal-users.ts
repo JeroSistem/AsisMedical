@@ -403,6 +403,18 @@ export async function upsertPrincipalUser(formData: PrincipalUserFormData) {
           metaErr
         );
       }
+
+      try {
+        const { ensureDefaultAccessProfiles } = await import(
+          '@/lib/actions/access-profiles'
+        );
+        await ensureDefaultAccessProfiles(entityId);
+      } catch (profileErr) {
+        console.warn(
+          '[upsertPrincipalUser] No se pudo crear perfil por defecto:',
+          profileErr
+        );
+      }
     }
 
     const adminDisplayName = `Admin ${institutionName}`;

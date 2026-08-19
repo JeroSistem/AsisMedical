@@ -1,8 +1,10 @@
 'use client';
 
+import { SubmoduleFormPage } from '@/components/shared/submodule-form-page';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { EmptyStatBlock, NoDataMessage } from '@/components/shared/no-data-message';
 import { Image, Camera, FileText, Clock, CheckCircle } from 'lucide-react';
 
 export default function ImagenesDiagnosticasPage() {
@@ -28,10 +30,7 @@ export default function ImagenesDiagnosticasPage() {
             <Image className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">23</div>
-            <p className="text-xs text-muted-foreground">
-              Imágenes capturadas hoy
-            </p>
+            <EmptyStatBlock />
           </CardContent>
         </Card>
 
@@ -41,10 +40,7 @@ export default function ImagenesDiagnosticasPage() {
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-600">8</div>
-            <p className="text-xs text-muted-foreground">
-              Esperando interpretación
-            </p>
+            <EmptyStatBlock />
           </CardContent>
         </Card>
 
@@ -54,10 +50,7 @@ export default function ImagenesDiagnosticasPage() {
             <CheckCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">15</div>
-            <p className="text-xs text-muted-foreground">
-              Interpretadas hoy
-            </p>
+            <EmptyStatBlock />
           </CardContent>
         </Card>
 
@@ -67,10 +60,7 @@ export default function ImagenesDiagnosticasPage() {
             <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">12</div>
-            <p className="text-xs text-muted-foreground">
-              Reportes generados
-            </p>
+            <EmptyStatBlock />
           </CardContent>
         </Card>
       </div>
@@ -86,37 +76,7 @@ export default function ImagenesDiagnosticasPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {[
-                { patient: 'María González', type: 'Radiografía de Tórax', time: '09:30 AM', priority: 'Alta' },
-                { patient: 'Juan Pérez', type: 'Ecografía Abdominal', time: '10:15 AM', priority: 'Media' },
-                { patient: 'Ana López', type: 'Tomografía Cerebral', time: '11:00 AM', priority: 'Alta' },
-                { patient: 'Carlos Ruiz', type: 'Resonancia Magnética', time: '11:45 AM', priority: 'Baja' },
-                { patient: 'Laura Torres', type: 'Mamografía', time: '12:30 PM', priority: 'Media' }
-              ].map((item, index) => (
-                <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                      item.priority === 'Alta' ? 'bg-red-100' : 
-                      item.priority === 'Media' ? 'bg-yellow-100' : 'bg-green-100'
-                    }`}>
-                      <Image className={`w-4 h-4 ${
-                        item.priority === 'Alta' ? 'text-red-600' : 
-                        item.priority === 'Media' ? 'text-yellow-600' : 'text-green-600'
-                      }`} />
-                    </div>
-                    <div>
-                      <p className="font-medium">{item.patient}</p>
-                      <p className="text-sm text-gray-500">{item.type} • {item.time}</p>
-                    </div>
-                  </div>
-                  <Badge variant={item.priority === 'Alta' ? 'destructive' : 
-                                item.priority === 'Media' ? 'secondary' : 'outline'}>
-                    {item.priority}
-                  </Badge>
-                </div>
-              ))}
-            </div>
+            <NoDataMessage />
           </CardContent>
         </Card>
 
@@ -129,36 +89,7 @@ export default function ImagenesDiagnosticasPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {[
-                { type: 'Radiografía', count: 45, percentage: 35 },
-                { type: 'Ecografía', count: 32, percentage: 25 },
-                { type: 'Tomografía', count: 28, percentage: 22 },
-                { type: 'Resonancia', count: 15, percentage: 12 },
-                { type: 'Mamografía', count: 8, percentage: 6 }
-              ].map((item, index) => (
-                <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-pink-100 rounded-full flex items-center justify-center">
-                      <Camera className="w-4 h-4 text-pink-600" />
-                    </div>
-                    <div>
-                      <p className="font-medium">{item.type}</p>
-                      <p className="text-sm text-gray-500">{item.count} estudios</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-medium">{item.percentage}%</p>
-                    <div className="w-20 h-2 bg-gray-200 rounded-full">
-                      <div 
-                        className="h-2 bg-pink-500 rounded-full" 
-                        style={{ width: `${item.percentage}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <NoDataMessage />
           </CardContent>
         </Card>
       </div>
@@ -192,6 +123,15 @@ export default function ImagenesDiagnosticasPage() {
           </div>
         </CardContent>
       </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>Formulario del módulo</CardTitle>
+          <CardDescription>Registro y parametrización</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <SubmoduleFormPage href="/imagenes-diagnosticas" embedded />
+        </CardContent>
+      </Card>
     </div>
   );
-} 
+}

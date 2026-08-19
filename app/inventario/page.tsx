@@ -1,10 +1,12 @@
 'use client';
 
-import { ModulePageLayout, ModuleCard } from '@/components/shared/module-page-layout';
+import { ModulePageLayout, ModuleCard } from '@/components/shared/module-page-layout'
+import { SubmoduleFormPage } from '@/components/shared/submodule-form-page';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Plus, Package, Warehouse, Truck, FileText, BarChart3 } from 'lucide-react';
+import { EmptyStatBlock } from '@/components/shared/no-data-message';
 import Link from 'next/link';
 
 export default function InventarioPage() {
@@ -205,23 +207,22 @@ export default function InventarioPage() {
         <h2 className="text-xl font-semibold mb-4">📊 Estadísticas de Inventario</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="text-center">
-            <div className="text-2xl font-bold text-blue-600">1,234</div>
-            <div className="text-sm text-muted-foreground">Productos Activos</div>
+            <EmptyStatBlock subtitle="Productos Activos" />
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-green-600">45</div>
-            <div className="text-sm text-muted-foreground">Proveedores</div>
+            <EmptyStatBlock subtitle="Proveedores" />
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-orange-600">12</div>
-            <div className="text-sm text-muted-foreground">Bodegas</div>
+            <EmptyStatBlock subtitle="Bodegas" />
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-red-600">23</div>
-            <div className="text-sm text-muted-foreground">Stock Bajo</div>
+            <EmptyStatBlock subtitle="Stock Bajo" />
           </div>
         </div>
       </div>
+      <ModuleCard title="Formulario del módulo" description="Registro y parametrización">
+        <SubmoduleFormPage href="/inventario" embedded />
+      </ModuleCard>
     </ModulePageLayout>
   );
-} 
+}

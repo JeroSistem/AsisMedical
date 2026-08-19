@@ -1,0 +1,38 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "npm: dev",
+      "type": "npm",
+      "script": "dev",
+      "problemMatcher": [],
+      "isBackground": true
+    },
+    {
+      "label": "npm: dev:turbo",
+      "type": "npm",
+      "script": "dev:turbo",
+      "problemMatcher": [],
+      "isBackground": true
+    },
+    {
+      "label": "npm: build",
+      "type": "npm",
+      "script": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "npm: lint",
+      "type": "npm",
+      "script": "lint",
+      "problemMatcher": []
+    },
+    {
+      "label": "npm: test",
+      "type": "npm",
+      "script": "test",
+      "problemMatcher": []
+    }
+  ]
+}
+

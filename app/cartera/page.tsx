@@ -1,8 +1,10 @@
 'use client';
 
+import { SubmoduleFormPage } from '@/components/shared/submodule-form-page';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { EmptyStatBlock, NoDataMessage } from '@/components/shared/no-data-message';
 import { CreditCard, DollarSign, TrendingUp, AlertCircle, FileText } from 'lucide-react';
 
 export default function CarteraPage() {
@@ -28,10 +30,7 @@ export default function CarteraPage() {
             <CreditCard className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">$456,780</div>
-            <p className="text-xs text-muted-foreground">
-              Saldo pendiente total
-            </p>
+            <EmptyStatBlock />
           </CardContent>
         </Card>
 
@@ -41,10 +40,7 @@ export default function CarteraPage() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">$23,450</div>
-            <p className="text-xs text-muted-foreground">
-              +12.5% desde ayer
-            </p>
+            <EmptyStatBlock />
           </CardContent>
         </Card>
 
@@ -54,10 +50,7 @@ export default function CarteraPage() {
             <AlertCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">$89,230</div>
-            <p className="text-xs text-muted-foreground">
-              Facturas vencidas
-            </p>
+            <EmptyStatBlock />
           </CardContent>
         </Card>
 
@@ -67,10 +60,7 @@ export default function CarteraPage() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-600">$156,000</div>
-            <p className="text-xs text-muted-foreground">
-              Próximos 30 días
-            </p>
+            <EmptyStatBlock />
           </CardContent>
         </Card>
       </div>
@@ -86,40 +76,7 @@ export default function CarteraPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {[
-                { paciente: 'María González', factura: 'F-001-2024', monto: 1250, dias: 45, estado: 'Crítico' },
-                { paciente: 'Juan Pérez', factura: 'F-002-2024', monto: 890, dias: 30, estado: 'Alto' },
-                { paciente: 'Ana López', factura: 'F-003-2024', monto: 2100, dias: 60, estado: 'Crítico' },
-                { paciente: 'Carlos Ruiz', factura: 'F-004-2024', monto: 750, dias: 15, estado: 'Medio' },
-                { paciente: 'Laura Torres', factura: 'F-005-2024', monto: 1800, dias: 90, estado: 'Crítico' }
-              ].map((item, index) => (
-                <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                      item.estado === 'Crítico' ? 'bg-red-100' : 
-                      item.estado === 'Alto' ? 'bg-orange-100' : 'bg-yellow-100'
-                    }`}>
-                      <AlertCircle className={`w-4 h-4 ${
-                        item.estado === 'Crítico' ? 'text-red-600' : 
-                        item.estado === 'Alto' ? 'text-orange-600' : 'text-yellow-600'
-                      }`} />
-                    </div>
-                    <div>
-                      <p className="font-medium">{item.paciente}</p>
-                      <p className="text-sm text-gray-500">{item.factura} • {item.dias} días vencida</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-medium">${item.monto.toLocaleString()}</p>
-                    <Badge variant={item.estado === 'Crítico' ? 'destructive' : 
-                                  item.estado === 'Alto' ? 'secondary' : 'outline'}>
-                      {item.estado}
-                    </Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <NoDataMessage />
           </CardContent>
         </Card>
 
@@ -132,31 +89,7 @@ export default function CarteraPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {[
-                { paciente: 'María González', monto: 1250, metodo: 'Efectivo', fecha: '2024-01-15' },
-                { paciente: 'Juan Pérez', monto: 890, metodo: 'Tarjeta', fecha: '2024-01-14' },
-                { paciente: 'Ana López', monto: 2100, metodo: 'Transferencia', fecha: '2024-01-13' },
-                { paciente: 'Carlos Ruiz', monto: 750, metodo: 'Efectivo', fecha: '2024-01-12' },
-                { paciente: 'Laura Torres', monto: 1800, metodo: 'Tarjeta', fecha: '2024-01-11' }
-              ].map((item, index) => (
-                <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                      <DollarSign className="w-4 h-4 text-green-600" />
-                    </div>
-                    <div>
-                      <p className="font-medium">{item.paciente}</p>
-                      <p className="text-sm text-gray-500">{item.fecha} • {item.metodo}</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-medium text-green-600">${item.monto.toLocaleString()}</p>
-                    <Badge variant="default">Cobrado</Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <NoDataMessage />
           </CardContent>
         </Card>
       </div>
@@ -190,6 +123,15 @@ export default function CarteraPage() {
           </div>
         </CardContent>
       </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>Formulario del módulo</CardTitle>
+          <CardDescription>Registro y parametrización</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <SubmoduleFormPage href="/cartera" embedded />
+        </CardContent>
+      </Card>
     </div>
   );
-} 
+}

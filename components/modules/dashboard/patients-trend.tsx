@@ -2,6 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { NoDataMessage } from "@/components/shared/no-data-message";
 
 interface PatientsByMonthProps {
   data: Array<{
@@ -11,13 +12,28 @@ interface PatientsByMonthProps {
 }
 
 export function PatientsByMonthChart({ data }: PatientsByMonthProps) {
-  const chartData = data.map(item => ({
-    month: new Date(item.month).toLocaleDateString('es-ES', { 
-      month: 'short', 
-      year: 'numeric' 
-    }),
-    pacientes: item.count
-  }));
+  const chartData = data
+    .filter((item) => item.count > 0)
+    .map((item) => ({
+      month: new Date(item.month).toLocaleDateString('es-ES', {
+        month: 'short',
+        year: 'numeric',
+      }),
+      pacientes: item.count,
+    }));
+
+  if (!chartData.length) {
+    return (
+      <Card className="h-full">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base sm:text-lg">Tendencia de Pacientes por Mes</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <NoDataMessage />
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="h-full">

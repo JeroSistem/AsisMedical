@@ -1,8 +1,10 @@
 'use client';
 
+import { SubmoduleFormPage } from '@/components/shared/submodule-form-page';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { EmptyStatBlock, NoDataMessage } from '@/components/shared/no-data-message';
 import { AlertCircle, FileText, TrendingUp, Clock } from 'lucide-react';
 
 export default function AnexoTecnicoInformeUrgenciaPage() {
@@ -28,8 +30,7 @@ export default function AnexoTecnicoInformeUrgenciaPage() {
             <FileText className="h-4 w-4 text-red-700" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">892</div>
-            <p className="text-xs text-muted-foreground">+34 este mes</p>
+            <EmptyStatBlock />
           </CardContent>
         </Card>
 
@@ -39,8 +40,7 @@ export default function AnexoTecnicoInformeUrgenciaPage() {
             <AlertCircle className="h-4 w-4 text-red-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">156</div>
-            <p className="text-xs text-muted-foreground">Este mes</p>
+            <EmptyStatBlock />
           </CardContent>
         </Card>
 
@@ -50,8 +50,7 @@ export default function AnexoTecnicoInformeUrgenciaPage() {
             <Clock className="h-4 w-4 text-orange-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">12 min</div>
-            <p className="text-xs text-muted-foreground">Respuesta</p>
+            <EmptyStatBlock />
           </CardContent>
         </Card>
 
@@ -61,8 +60,7 @@ export default function AnexoTecnicoInformeUrgenciaPage() {
             <TrendingUp className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">+5.2%</div>
-            <p className="text-xs text-muted-foreground">vs mes anterior</p>
+            <EmptyStatBlock />
           </CardContent>
         </Card>
       </div>
@@ -76,23 +74,7 @@ export default function AnexoTecnicoInformeUrgenciaPage() {
             <CardDescription>Últimos informes de urgencias</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {[1, 2, 3, 4, 5].map((item) => (
-                <div key={item} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <AlertCircle className="h-5 w-5 text-red-700" />
-                    <div>
-                      <p className="font-medium">Informe #{7000 + item}</p>
-                      <p className="text-sm text-gray-500">Urgencia {item}</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm text-gray-500">2024-01-{item.toString().padStart(2, '0')}</p>
-                    <Badge variant="secondary">Completado</Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <NoDataMessage />
           </CardContent>
         </Card>
 
@@ -124,6 +106,15 @@ export default function AnexoTecnicoInformeUrgenciaPage() {
           </CardContent>
         </Card>
       </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Formulario del módulo</CardTitle>
+          <CardDescription>Registro y parametrización</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <SubmoduleFormPage href="/facturacion/administracion/anexo-urgencia" embedded />
+        </CardContent>
+      </Card>
     </div>
   );
-} 
+}

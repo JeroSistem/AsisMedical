@@ -1,8 +1,10 @@
 'use client';
 
+import { SubmoduleFormPage } from '@/components/shared/submodule-form-page';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { EmptyStatBlock, NoDataMessage } from '@/components/shared/no-data-message';
 import { CheckCircle, FileText, Clock, AlertTriangle } from 'lucide-react';
 
 export default function AnexoTecnicoAutorizacionesPage() {
@@ -28,8 +30,7 @@ export default function AnexoTecnicoAutorizacionesPage() {
             <CheckCircle className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">1,234</div>
-            <p className="text-xs text-muted-foreground">+45 este mes</p>
+            <EmptyStatBlock />
           </CardContent>
         </Card>
 
@@ -39,8 +40,7 @@ export default function AnexoTecnicoAutorizacionesPage() {
             <CheckCircle className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">1,156</div>
-            <p className="text-xs text-muted-foreground">94% aprobación</p>
+            <EmptyStatBlock />
           </CardContent>
         </Card>
 
@@ -50,8 +50,7 @@ export default function AnexoTecnicoAutorizacionesPage() {
             <Clock className="h-4 w-4 text-orange-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">78</div>
-            <p className="text-xs text-muted-foreground">En revisión</p>
+            <EmptyStatBlock />
           </CardContent>
         </Card>
 
@@ -61,8 +60,7 @@ export default function AnexoTecnicoAutorizacionesPage() {
             <AlertTriangle className="h-4 w-4 text-red-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">12</div>
-            <p className="text-xs text-muted-foreground">Requieren corrección</p>
+            <EmptyStatBlock />
           </CardContent>
         </Card>
       </div>
@@ -76,23 +74,7 @@ export default function AnexoTecnicoAutorizacionesPage() {
             <CardDescription>Últimas autorizaciones procesadas</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {[1, 2, 3, 4, 5].map((item) => (
-                <div key={item} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <CheckCircle className="h-5 w-5 text-blue-600" />
-                    <div>
-                      <p className="font-medium">Autorización #{8000 + item}</p>
-                      <p className="text-sm text-gray-500">Paciente {item}</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm text-gray-500">Dr. López</p>
-                    <Badge variant="secondary">Aprobada</Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <NoDataMessage />
           </CardContent>
         </Card>
 
@@ -124,6 +106,15 @@ export default function AnexoTecnicoAutorizacionesPage() {
           </CardContent>
         </Card>
       </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Formulario del módulo</CardTitle>
+          <CardDescription>Registro y parametrización</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <SubmoduleFormPage href="/facturacion/administracion/anexo-autorizaciones" embedded />
+        </CardContent>
+      </Card>
     </div>
   );
-} 
+}

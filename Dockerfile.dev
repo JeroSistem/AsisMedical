@@ -1,0 +1,23 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+RUN apk add --no-cache libc6-compat openssl
+
+# Prisma generate se ejecuta en postinstall, así que necesitamos que el esquema exista.
+ENV DATABASE_URL="mysql://build:build@127.0.0.1:3306/build"
+ENV NEXT_TELEMETRY_DISABLED=1
+
+COPY package.json package-lock.json ./
+COPY prisma ./prisma
+COPY prisma.config.ts ./prisma.config.ts
+
+RUN npm ci
+
+# Copiamos el código fuente para que next dev funcione.
+COPY . .
+
+EXPOSE 9002
+
+CMD ["npx", "next", "dev", "-H", "0.0.0.0", "-p", "9002"]
+

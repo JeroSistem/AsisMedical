@@ -28,6 +28,7 @@ import {
   X,
   RefreshCw
 } from 'lucide-react';
+import { NoDataMessage } from '@/components/shared/no-data-message';
 
 export default function AlertasPage() {
   const [filtroTipo, setFiltroTipo] = useState('todas');
@@ -45,101 +46,35 @@ export default function AlertasPage() {
     horarioNotificaciones: '24h'
   });
 
-  // Alertas activas
-  const [alertas, setAlertas] = useState([
-    {
-      id: 1,
-      titulo: 'Bajo stock en medicamentos críticos',
-      descripcion: 'Los medicamentos de emergencia están por debajo del stock mínimo',
-      tipo: 'inventario',
-      prioridad: 'alta',
-      fecha: '2024-01-15 14:30',
-      estado: 'activa',
-      departamento: 'Farmacia',
-      accion: 'Reabastecer medicamentos críticos'
-    },
-    {
-      id: 2,
-      titulo: 'Mantenimiento programado para equipos',
-      descripcion: 'Se requiere mantenimiento preventivo en equipos de UCI',
-      tipo: 'equipo',
-      prioridad: 'media',
-      fecha: '2024-01-15 12:15',
-      estado: 'activa',
-      departamento: 'Mantenimiento',
-      accion: 'Programar mantenimiento'
-    },
-    {
-      id: 3,
-      titulo: 'Personal médico requerido en UCI',
-      descripcion: 'Se necesita personal médico adicional en la unidad de cuidados intensivos',
-      tipo: 'personal',
-      prioridad: 'alta',
-      fecha: '2024-01-15 10:45',
-      estado: 'activa',
-      departamento: 'Recursos Humanos',
-      accion: 'Asignar personal médico'
-    },
-    {
-      id: 4,
-      titulo: 'Paciente con resultados críticos',
-      descripcion: 'Paciente Juan Pérez tiene resultados de laboratorio críticos',
-      tipo: 'paciente',
-      prioridad: 'alta',
-      fecha: '2024-01-15 09:20',
-      estado: 'resuelta',
-      departamento: 'Laboratorio',
-      accion: 'Revisar resultados'
-    },
-    {
-      id: 5,
-      titulo: 'Sistema de respaldo falló',
-      descripcion: 'El sistema de respaldo automático no se ejecutó correctamente',
-      tipo: 'sistema',
-      prioridad: 'media',
-      fecha: '2024-01-15 08:30',
-      estado: 'activa',
-      departamento: 'TI',
-      accion: 'Verificar sistema de respaldo'
-    },
-    {
-      id: 6,
-      titulo: 'Temperatura fuera de rango en refrigerador',
-      descripcion: 'La temperatura del refrigerador de medicamentos está fuera del rango seguro',
-      tipo: 'equipo',
-      prioridad: 'alta',
-      fecha: '2024-01-15 07:15',
-      estado: 'activa',
-      departamento: 'Farmacia',
-      accion: 'Verificar refrigerador'
-    }
-  ]);
+  // Alertas activas (solo datos reales cuando exista integración)
+  const [alertas, setAlertas] = useState<
+    Array<{
+      id: number;
+      titulo: string;
+      descripcion: string;
+      tipo: string;
+      prioridad: string;
+      fecha: string;
+      estado: string;
+      departamento: string;
+      accion: string;
+    }>
+  >([]);
 
   // Historial de alertas
-  const [historial, setHistorial] = useState([
-    {
-      id: 7,
-      titulo: 'Cama disponible en habitación 201',
-      descripcion: 'La habitación 201 está disponible para nuevos pacientes',
-      tipo: 'operativo',
-      prioridad: 'baja',
-      fecha: '2024-01-14 16:30',
-      estado: 'resuelta',
-      departamento: 'Enfermería',
-      accion: 'Asignar paciente'
-    },
-    {
-      id: 8,
-      titulo: 'Actualización de software disponible',
-      descripcion: 'Nueva versión del software médico disponible para actualización',
-      tipo: 'sistema',
-      prioridad: 'baja',
-      fecha: '2024-01-14 15:45',
-      estado: 'resuelta',
-      departamento: 'TI',
-      accion: 'Programar actualización'
-    }
-  ]);
+  const [historial, setHistorial] = useState<
+    Array<{
+      id: number;
+      titulo: string;
+      descripcion: string;
+      tipo: string;
+      prioridad: string;
+      fecha: string;
+      estado: string;
+      departamento: string;
+      accion: string;
+    }>
+  >([]);
 
   const handleMarcarResuelta = (id: number) => {
     setAlertas(prev => prev.map(alerta => 
@@ -347,7 +282,10 @@ export default function AlertasPage() {
 
           {/* Lista de alertas activas */}
           <div className="space-y-4">
-            {alertasActivas.map((alerta) => (
+            {alertasActivas.length === 0 ? (
+              <NoDataMessage title="No hay alertas activas" />
+            ) : (
+              alertasActivas.map((alerta) => (
               <Card key={alerta.id} className="border-l-4 border-l-red-500">
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between">
@@ -390,7 +328,8 @@ export default function AlertasPage() {
                   </div>
                 </CardContent>
               </Card>
-            ))}
+            ))
+            )}
           </div>
         </TabsContent>
 
@@ -400,7 +339,10 @@ export default function AlertasPage() {
             description="Alertas resueltas y archivadas"
           >
             <div className="space-y-4">
-              {historial.map((alerta) => (
+              {historial.length === 0 ? (
+                <NoDataMessage title="No hay alertas en el historial" />
+              ) : (
+                historial.map((alerta) => (
                 <div key={alerta.id} className="flex items-center justify-between p-4 border rounded-lg bg-gray-50">
                   <div className="flex items-center space-x-4">
                     {getTipoIcon(alerta.tipo)}
@@ -422,7 +364,8 @@ export default function AlertasPage() {
                     <Eye className="w-4 h-4" />
                   </Button>
                 </div>
-              ))}
+              ))
+              )}
             </div>
           </ModuleCard>
         </TabsContent>

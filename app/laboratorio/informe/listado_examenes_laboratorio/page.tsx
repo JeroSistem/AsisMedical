@@ -22,74 +22,20 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-// Datos de ejemplo para exámenes
-const mockExamenes = [
-  {
-    id: 1,
-    numeroExamen: 'LAB-001',
-    paciente: 'Juan Pérez',
-    documento: '1234567890',
-    procedimiento: 'Hemograma Completo',
-    fechaSolicitud: '2024-01-15',
-    fechaRealizacion: '2024-01-15',
-    medicoSolicitante: 'Dr. Ana Martínez',
-    estado: 'completado',
-    resultado: 'Normal',
-    prioridad: 'normal'
-  },
-  {
-    id: 2,
-    numeroExamen: 'LAB-002',
-    paciente: 'María García',
-    documento: '0987654321',
-    procedimiento: 'Glicemia en Ayunas',
-    fechaSolicitud: '2024-01-15',
-    fechaRealizacion: '2024-01-16',
-    medicoSolicitante: 'Dr. Carlos Rodríguez',
-    estado: 'en_proceso',
-    resultado: 'Pendiente',
-    prioridad: 'urgent'
-  },
-  {
-    id: 3,
-    numeroExamen: 'LAB-003',
-    paciente: 'Carlos López',
-    documento: '1122334455',
-    procedimiento: 'Perfil Lipídico',
-    fechaSolicitud: '2024-01-14',
-    fechaRealizacion: '2024-01-14',
-    medicoSolicitante: 'Dr. Ana Martínez',
-    estado: 'completado',
-    resultado: 'Alterado',
-    prioridad: 'normal'
-  },
-  {
-    id: 4,
-    numeroExamen: 'LAB-004',
-    paciente: 'Laura Gómez',
-    documento: '5566778899',
-    procedimiento: 'Creatinina',
-    fechaSolicitud: '2024-01-13',
-    fechaRealizacion: null,
-    medicoSolicitante: 'Dr. Roberto Díaz',
-    estado: 'pendiente',
-    resultado: 'Pendiente',
-    prioridad: 'normal'
-  },
-  {
-    id: 5,
-    numeroExamen: 'LAB-005',
-    paciente: 'Pedro Ramírez',
-    documento: '2233445566',
-    procedimiento: 'Urea',
-    fechaSolicitud: '2024-01-12',
-    fechaRealizacion: '2024-01-12',
-    medicoSolicitante: 'Dr. Ana Martínez',
-    estado: 'cancelado',
-    resultado: 'Cancelado',
-    prioridad: 'low'
-  },
-];
+// Sin datos hasta integración con BD
+const mockExamenes: Array<{
+  id: number;
+  numeroExamen: string;
+  paciente: string;
+  documento: string;
+  procedimiento: string;
+  fechaSolicitud: string;
+  fechaRealizacion: string | null;
+  medicoSolicitante: string;
+  estado: string;
+  resultado: string;
+  prioridad: string;
+}> = [];
 
 const statusColors = {
   completado: "bg-green-100 text-green-800",

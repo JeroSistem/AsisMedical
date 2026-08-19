@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Imagen Docker / Render: servidor autónomo (build en GitHub Actions)
-  output: 'standalone',
+  // Solo en build/producción. En Windows `next dev` se cuelga en "Starting..."
+  ...(process.env.NODE_ENV === 'production' ? { output: 'standalone' } : {}),
   images: {
     domains: ['localhost'],
     unoptimized: true,
@@ -25,6 +25,7 @@ const nextConfig = {
     '@prisma/client',
     '.prisma/client',
     '@prisma/adapter-mariadb',
+    '@prisma/driver-adapter-utils',
     'mariadb',
     'mysql2',
     'bcryptjs',

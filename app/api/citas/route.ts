@@ -12,24 +12,7 @@ interface Appointment {
   notes?: string | null;
 }
 
-const demoAppointments: Appointment[] = [
-  {
-    id: 'appointment-1',
-    patientId: 'patient-1',
-    date: '2024-05-20T14:00:00.000Z',
-    type: 'Consulta general',
-    status: 'CONFIRMED',
-    notes: 'Control mensual de hipertensión'
-  },
-  {
-    id: 'appointment-2',
-    patientId: 'patient-2',
-    date: '2024-05-21T09:30:00.000Z',
-    type: 'Neumología',
-    status: 'PENDING',
-    notes: 'Evaluar manejo de asma estacional'
-  }
-];
+const demoAppointments: Appointment[] = [];
 
 function generateId(prefix: string) {
   return `${prefix}-${Math.random().toString(36).slice(2, 10)}`;

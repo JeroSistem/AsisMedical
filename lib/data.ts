@@ -1,6 +1,8 @@
 import type { Patient, MedicalRecord, User } from './types';
 import type { PrismaClient } from '@prisma/client';
+import mysql from 'mysql2/promise';
 import { prisma } from './prisma';
+import { mysqlConfigFromUrl } from './mysql-adapter';
 
 function logDbUnavailable(context: string, error: unknown) {
   const code = (error as any)?.code;
@@ -244,16 +246,30 @@ export async function testDatabaseConnection(
   db: PrismaClient = prisma
 ): Promise<boolean> {
   try {
-    if (!db || typeof db.$queryRaw === 'undefined') {
-      console.warn('[DB] Prisma no está inicializado correctamente');
-      return false;
-    }
-
-    await db.$queryRaw`SELECT 1`;
+    const cfg = mysqlConfigFromUrl();
+    const conn = await mysql.createConnection({
+      host: cfg.host,
+      port: cfg.port,
+      user: cfg.user,
+      password: cfg.password,
+      database: cfg.database,
+      connectTimeout: 5000,
+    });
+    await conn.query('SELECT 1');
+    await conn.end();
     return true;
   } catch (error) {
     logDbUnavailable('testDatabaseConnection', error);
-    return false;
+    if (!db || typeof db.$queryRaw === 'undefined') {
+      return false;
+    }
+    try {
+      await db.user.count({ take: 1 });
+      return true;
+    } catch (prismaError) {
+      logDbUnavailable('testDatabaseConnection.prisma', prismaError);
+      return false;
+    }
   }
 }
 

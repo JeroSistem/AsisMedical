@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useRef, useCallback } from 'react';
-import { ModulePageLayout, ModuleCard } from '@/components/shared/module-page-layout';
+import { ModulePageLayout, ModuleCard } from '@/components/shared/module-page-layout'
+import { SubmoduleFormPage } from '@/components/shared/submodule-form-page';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -453,6 +454,9 @@ export default function ConfiguracionGeneralPage() {
           </CardContent>
         </Card>
       )}
+      <ModuleCard title="Formulario del módulo" description="Registro y parametrización">
+        <SubmoduleFormPage href="/configuracion/general" embedded />
+      </ModuleCard>
     </ModulePageLayout>
   );
 }

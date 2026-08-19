@@ -1,8 +1,10 @@
 'use client';
 
+import { SubmoduleFormPage } from '@/components/shared/submodule-form-page';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { EmptyStatBlock, NoDataMessage } from '@/components/shared/no-data-message';
 import { FileText, CheckCircle, AlertCircle, TrendingUp } from 'lucide-react';
 
 export default function Resolucion202Page() {
@@ -28,8 +30,7 @@ export default function Resolucion202Page() {
             <FileText className="h-4 w-4 text-indigo-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">1,567</div>
-            <p className="text-xs text-muted-foreground">+45 este mes</p>
+            <EmptyStatBlock />
           </CardContent>
         </Card>
 
@@ -39,8 +40,7 @@ export default function Resolucion202Page() {
             <CheckCircle className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">1,432</div>
-            <p className="text-xs text-muted-foreground">91% cumplimiento</p>
+            <EmptyStatBlock />
           </CardContent>
         </Card>
 
@@ -50,8 +50,7 @@ export default function Resolucion202Page() {
             <AlertCircle className="h-4 w-4 text-orange-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">135</div>
-            <p className="text-xs text-muted-foreground">Requieren atención</p>
+            <EmptyStatBlock />
           </CardContent>
         </Card>
 
@@ -61,8 +60,7 @@ export default function Resolucion202Page() {
             <TrendingUp className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">+12%</div>
-            <p className="text-xs text-muted-foreground">vs mes anterior</p>
+            <EmptyStatBlock />
           </CardContent>
         </Card>
       </div>
@@ -76,23 +74,7 @@ export default function Resolucion202Page() {
             <CardDescription>Últimos registros de Resolución 202</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {[1, 2, 3, 4, 5].map((item) => (
-                <div key={item} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <FileText className="h-5 w-5 text-indigo-600" />
-                    <div>
-                      <p className="font-medium">Registro #{4000 + item}</p>
-                      <p className="text-sm text-gray-500">Categoría {item}</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm text-gray-500">2024-01-{item.toString().padStart(2, '0')}</p>
-                    <Badge variant="secondary">Cumplido</Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <NoDataMessage />
           </CardContent>
         </Card>
 
@@ -124,6 +106,15 @@ export default function Resolucion202Page() {
           </CardContent>
         </Card>
       </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Formulario del módulo</CardTitle>
+          <CardDescription>Registro y parametrización</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <SubmoduleFormPage href="/facturacion/administracion/resolucion-202" embedded />
+        </CardContent>
+      </Card>
     </div>
   );
-} 
+}

@@ -16,36 +16,16 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 
-// Datos de ejemplo
-const parametrizacionesEjemplo = [
-  {
-    id: '1',
-    procedimiento: 'Hemograma Completo',
-    activo: true,
-    categorias: 3,
-    items: 12,
-    fechaCreacion: '2024-01-15',
-    fechaModificacion: '2024-01-20',
-  },
-  {
-    id: '2',
-    procedimiento: 'Glicemia en Ayunas',
-    activo: true,
-    categorias: 1,
-    items: 1,
-    fechaCreacion: '2024-01-10',
-    fechaModificacion: '2024-01-10',
-  },
-  {
-    id: '3',
-    procedimiento: 'Perfil Lipídico',
-    activo: false,
-    categorias: 2,
-    items: 8,
-    fechaCreacion: '2024-01-05',
-    fechaModificacion: '2024-01-18',
-  },
-];
+// Sin datos hasta integración con BD
+const parametrizacionesEjemplo: Array<{
+  id: string;
+  procedimiento: string;
+  activo: boolean;
+  categorias: number;
+  items: number;
+  fechaCreacion: string;
+  fechaModificacion: string;
+}> = [];
 
 export default function ParametrizacionListadoPage() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -105,7 +85,28 @@ export default function ParametrizacionListadoPage() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {parametrizacionesFiltradas.map((param) => (
+            {parametrizacionesFiltradas.length === 0 ? (
+              <div className="text-center py-12">
+                <TestTube className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  No se encontraron parametrizaciones
+                </h3>
+                <p className="text-gray-600 mb-4">
+                  {searchTerm
+                    ? 'Intenta ajustar los términos de búsqueda'
+                    : 'Comience creando una nueva parametrización'}
+                </p>
+                {!searchTerm && (
+                  <Button asChild>
+                    <Link href="/laboratorio/parametrizacion">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Nueva Parametrización
+                    </Link>
+                  </Button>
+                )}
+              </div>
+            ) : (
+              parametrizacionesFiltradas.map((param) => (
               <div
                 key={param.id}
                 className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors"
@@ -149,28 +150,7 @@ export default function ParametrizacionListadoPage() {
                   </Button>
                 </div>
               </div>
-            ))}
-
-            {parametrizacionesFiltradas.length === 0 && (
-              <div className="text-center py-12">
-                <TestTube className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  No se encontraron parametrizaciones
-                </h3>
-                <p className="text-gray-600 mb-4">
-                  {searchTerm 
-                    ? 'Intenta ajustar los términos de búsqueda' 
-                    : 'Comience creando una nueva parametrización'}
-                </p>
-                {!searchTerm && (
-                  <Button asChild>
-                    <Link href="/laboratorio/parametrizacion">
-                      <Plus className="h-4 w-4 mr-2" />
-                      Nueva Parametrización
-                    </Link>
-                  </Button>
-                )}
-              </div>
+            ))
             )}
           </div>
         </CardContent>

@@ -1,29 +1,17 @@
 import { PrismaClient } from '@prisma/client';
-import { PrismaMariaDb } from '@prisma/adapter-mariadb';
 import mysql from 'mysql2/promise';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import * as fs from 'fs';
 import * as path from 'path';
+import { createMysqlAdapter, mysqlConfigFromUrl } from '@/lib/mysql-adapter';
 
 const execAsync = promisify(exec);
 
 const prismaClientsCache = new Map<string, PrismaClient>();
 
 function getBaseConnectionConfig() {
-  const connectionString = process.env.DATABASE_URL;
-  if (!connectionString) {
-    throw new Error('DATABASE_URL no está definida en las variables de entorno');
-  }
-
-  const url = new URL(connectionString);
-  return {
-    host: url.hostname,
-    port: parseInt(url.port || '3306', 10),
-    user: url.username,
-    password: decodeURIComponent(url.password || ''),
-    database: url.pathname.replace(/^\//, ''),
-  };
+  return mysqlConfigFromUrl();
 }
 
 export function getEntityDatabaseName(entityId: string): string {
@@ -41,15 +29,7 @@ function buildDatabaseUrl(databaseName: string): string {
 }
 
 function createAdapter(databaseName: string) {
-  const baseConfig = getBaseConnectionConfig();
-  return new PrismaMariaDb({
-    host: baseConfig.host,
-    port: baseConfig.port,
-    user: baseConfig.user,
-    password: baseConfig.password,
-    database: databaseName,
-    connectionLimit: 10,
-  });
+  return createMysqlAdapter(databaseName, 5);
 }
 
 async function getAdminConnection() {
@@ -280,17 +260,142 @@ export async function ensurePatientDifferentialColumns(
   }
 }
 
+const partnerContractColumnsReady = new Set<string>();
+const moduleFormRecordsTableReady = new Set<string>();
+
+export async function ensureModuleFormRecordsTable(
+  entityId?: string
+): Promise<{ success: boolean; error?: string }> {
+  const cacheKey = entityId ?? '__platform__';
+  if (moduleFormRecordsTableReady.has(cacheKey)) {
+    return { success: true };
+  }
+
+  const databaseName = entityId
+    ? getEntityDatabaseName(entityId)
+    : getBaseConnectionConfig().database ?? 'asis_medical';
+
+  const baseConfig = getBaseConnectionConfig();
+  const conn = await mysql.createConnection({
+    host: baseConfig.host,
+    port: baseConfig.port,
+    user: baseConfig.user,
+    password: baseConfig.password,
+    database: databaseName,
+  });
+
+  try {
+    await conn.query(`
+      CREATE TABLE IF NOT EXISTS \`module_form_records\` (
+        \`id\` VARCHAR(191) NOT NULL,
+        \`module_path\` VARCHAR(512) NOT NULL,
+        \`mode\` VARCHAR(32) NOT NULL DEFAULT 'crud',
+        \`codigo\` VARCHAR(128) NULL,
+        \`nombre\` VARCHAR(512) NULL,
+        \`estado\` VARCHAR(64) NULL DEFAULT 'activo',
+        \`payload\` JSON NOT NULL,
+        \`created_by_id\` VARCHAR(191) NULL,
+        \`created_by_name\` VARCHAR(255) NULL,
+        \`created_at\` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+        \`updated_at\` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+        PRIMARY KEY (\`id\`),
+        INDEX \`module_form_records_module_path_idx\` (\`module_path\`),
+        INDEX \`module_form_records_module_path_created_at_idx\` (\`module_path\`, \`created_at\`),
+        INDEX \`module_form_records_codigo_idx\` (\`codigo\`)
+      ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+    `);
+
+    moduleFormRecordsTableReady.add(cacheKey);
+    if (entityId) {
+      clearPrismaClientCache(entityId);
+    }
+    return { success: true };
+  } catch (error: any) {
+    console.error(`[ensureModuleFormRecordsTable] Error:`, error);
+    return {
+      success: false,
+      error: error.message || 'No se pudo crear module_form_records',
+    };
+  } finally {
+    await conn.end().catch(() => {});
+  }
+}
+
+export async function ensurePartnerContractColumns(
+  entityId: string
+): Promise<{ success: boolean; error?: string }> {
+  if (partnerContractColumnsReady.has(entityId)) {
+    return { success: true };
+  }
+
+  const databaseName = getEntityDatabaseName(entityId);
+  const baseConfig = getBaseConnectionConfig();
+  const conn = await mysql.createConnection({
+    host: baseConfig.host,
+    port: baseConfig.port,
+    user: baseConfig.user,
+    password: baseConfig.password,
+    database: databaseName,
+  });
+
+  try {
+    const [tables] = await conn.query<mysql.RowDataPacket[]>(
+      `SELECT TABLE_NAME FROM information_schema.TABLES
+       WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'partner_contracts' LIMIT 1`,
+      [databaseName]
+    );
+    if (!tables.length) {
+      return { success: true };
+    }
+
+    await addColumnIfMissing(conn, 'partner_contracts', 'description', 'TEXT NULL');
+    await addColumnIfMissing(
+      conn,
+      'partner_contracts',
+      'benefit_plan',
+      'VARCHAR(255) NULL'
+    );
+    await addColumnIfMissing(
+      conn,
+      'partner_contracts',
+      'medication_price_list',
+      'VARCHAR(255) NULL'
+    );
+    await addColumnIfMissing(conn, 'partner_contracts', 'form_payload', 'JSON NULL');
+
+    partnerContractColumnsReady.add(entityId);
+    return { success: true };
+  } catch (error: any) {
+    console.error(`[ensurePartnerContractColumns] Error:`, error);
+    return {
+      success: false,
+      error: error.message || 'No se pudieron crear columnas de contratos',
+    };
+  } finally {
+    await conn.end().catch(() => {});
+  }
+}
+
 export async function ensureEntityIncrementalTables(
   entityId: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
     // En MySQL fresco, el schema completo ya viene de db push.
-    // Solo aseguramos columnas diferenciales de patients.
+    // Solo aseguramos columnas diferenciales de patients y contratos.
     const diff = await ensurePatientDifferentialColumns(entityId);
+    if (!diff.success) {
+      return { success: false, error: diff.error };
+    }
+    const contracts = await ensurePartnerContractColumns(entityId);
+    const forms = await ensureModuleFormRecordsTable(entityId);
     clearPrismaClientCache(entityId);
-    return diff.success
-      ? { success: true }
-      : { success: false, error: diff.error };
+    if (!contracts.success) {
+      return { success: false, error: contracts.error };
+    }
+    if (!forms.success) {
+      return { success: false, error: forms.error };
+    }
+    return { success: true };
   } catch (error: any) {
     console.error(`[ensureEntityIncrementalTables] Error:`, error);
     return {

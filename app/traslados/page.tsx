@@ -1,8 +1,9 @@
 'use client';
 
+import { SubmoduleFormPage } from '@/components/shared/submodule-form-page';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { EmptyStatBlock, NoDataMessage } from '@/components/shared/no-data-message';
 import { Truck, MapPin, Clock, Users } from 'lucide-react';
 
 export default function TrasladosPage() {
@@ -28,8 +29,7 @@ export default function TrasladosPage() {
             <Truck className="h-4 w-4 text-orange-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">8</div>
-            <p className="text-xs text-muted-foreground">+2 del día anterior</p>
+            <EmptyStatBlock />
           </CardContent>
         </Card>
 
@@ -39,8 +39,7 @@ export default function TrasladosPage() {
             <Clock className="h-4 w-4 text-orange-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">3</div>
-            <p className="text-xs text-muted-foreground">Actualmente en ruta</p>
+            <EmptyStatBlock />
           </CardContent>
         </Card>
 
@@ -50,8 +49,7 @@ export default function TrasladosPage() {
             <MapPin className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">156</div>
-            <p className="text-xs text-muted-foreground">Este mes</p>
+            <EmptyStatBlock />
           </CardContent>
         </Card>
 
@@ -61,8 +59,7 @@ export default function TrasladosPage() {
             <Users className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">5</div>
-            <p className="text-xs text-muted-foreground">Ambulancias activas</p>
+            <EmptyStatBlock />
           </CardContent>
         </Card>
       </div>
@@ -76,23 +73,10 @@ export default function TrasladosPage() {
             <CardDescription>Traslados en progreso</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {[1, 2, 3].map((item) => (
-                <div key={item} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <Truck className="h-5 w-5 text-orange-600" />
-                    <div>
-                      <p className="font-medium">Traslado #{2000 + item}</p>
-                      <p className="text-sm text-gray-500">Paciente {item} - Urgencia</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm text-gray-500">En ruta</p>
-                    <Badge variant="secondary">Activo</Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <NoDataMessage
+              title="Sin traslados activos"
+              description="Los traslados en progreso aparecerán aquí."
+            />
           </CardContent>
         </Card>
 
@@ -124,6 +108,15 @@ export default function TrasladosPage() {
           </CardContent>
         </Card>
       </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Formulario del módulo</CardTitle>
+          <CardDescription>Registro y parametrización</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <SubmoduleFormPage href="/facturacion/administracion/traslados" embedded />
+        </CardContent>
+      </Card>
     </div>
   );
-} 
+}

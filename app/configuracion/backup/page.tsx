@@ -29,6 +29,7 @@ import {
   Pause,
   Trash2
 } from 'lucide-react';
+import { NoDataMessage } from '@/components/shared/no-data-message';
 
 export default function BackupPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -74,36 +75,18 @@ export default function BackupPage() {
     checksumVerification: true
   });
 
-  // Datos de ejemplo para backups existentes
-  const [existingBackups] = useState([
-    {
-      id: 1,
-      name: 'backup_2024_01_15_020000',
-      type: 'full',
-      size: '2.3 GB',
-      date: '2024-01-15 02:00:00',
-      status: 'completed',
-      location: 'local'
-    },
-    {
-      id: 2,
-      name: 'backup_2024_01_14_020000',
-      type: 'incremental',
-      size: '156 MB',
-      date: '2024-01-14 02:00:00',
-      status: 'completed',
-      location: 'local'
-    },
-    {
-      id: 3,
-      name: 'backup_2024_01_13_020000',
-      type: 'full',
-      size: '2.1 GB',
-      date: '2024-01-13 02:00:00',
-      status: 'failed',
-      location: 'local'
-    }
-  ]);
+  // Sin backups registrados hasta integración con almacenamiento
+  const [existingBackups] = useState<
+    Array<{
+      id: number;
+      name: string;
+      type: string;
+      size: string;
+      date: string;
+      status: string;
+      location: string;
+    }>
+  >([]);
 
   const handleInputChange = (field: string, value: string | boolean) => {
     setBackupSettings(prev => ({
@@ -648,7 +631,10 @@ export default function BackupPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {existingBackups.map((backup) => (
+              {existingBackups.length === 0 ? (
+                <NoDataMessage title="No hay backups registrados" />
+              ) : (
+                existingBackups.map((backup) => (
                 <div key={backup.id} className="flex items-center justify-between p-4 border rounded-lg">
                   <div className="flex-1">
                     <div className="flex items-center space-x-3">
@@ -684,7 +670,8 @@ export default function BackupPage() {
                     </Button>
                   </div>
                 </div>
-              ))}
+              ))
+              )}
             </div>
           </CardContent>
         </ModuleCard>

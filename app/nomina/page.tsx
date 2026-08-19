@@ -1,8 +1,10 @@
 'use client';
 
+import { SubmoduleFormPage } from '@/components/shared/submodule-form-page';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { EmptyStatBlock, NoDataMessage } from '@/components/shared/no-data-message';
 import { Users, DollarSign, Calendar, FileText, UserPlus } from 'lucide-react';
 
 export default function NominaPage() {
@@ -28,10 +30,7 @@ export default function NominaPage() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">156</div>
-            <p className="text-xs text-muted-foreground">
-              Personal activo
-            </p>
+            <EmptyStatBlock />
           </CardContent>
         </Card>
 
@@ -41,10 +40,7 @@ export default function NominaPage() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">$245,800</div>
-            <p className="text-xs text-muted-foreground">
-              Salarios + prestaciones
-            </p>
+            <EmptyStatBlock />
           </CardContent>
         </Card>
 
@@ -54,10 +50,7 @@ export default function NominaPage() {
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-600">12</div>
-            <p className="text-xs text-muted-foreground">
-              Solicitudes pendientes
-            </p>
+            <EmptyStatBlock />
           </CardContent>
         </Card>
 
@@ -67,10 +60,7 @@ export default function NominaPage() {
             <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">8</div>
-            <p className="text-xs text-muted-foreground">
-              Por renovar este mes
-            </p>
+            <EmptyStatBlock />
           </CardContent>
         </Card>
       </div>
@@ -86,36 +76,7 @@ export default function NominaPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {[
-                { departamento: 'Médicos', empleados: 45, porcentaje: 28.8 },
-                { departamento: 'Enfermería', empleados: 38, porcentaje: 24.4 },
-                { departamento: 'Administrativo', empleados: 25, porcentaje: 16.0 },
-                { departamento: 'Laboratorio', empleados: 18, porcentaje: 11.5 },
-                { departamento: 'Servicios Generales', empleados: 30, porcentaje: 19.2 }
-              ].map((item, index) => (
-                <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-fuchsia-100 rounded-full flex items-center justify-center">
-                      <Users className="w-4 h-4 text-fuchsia-600" />
-                    </div>
-                    <div>
-                      <p className="font-medium">{item.departamento}</p>
-                      <p className="text-sm text-gray-500">{item.empleados} empleados</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-medium">{item.porcentaje}%</p>
-                    <div className="w-20 h-2 bg-gray-200 rounded-full">
-                      <div 
-                        className="h-2 bg-fuchsia-500 rounded-full" 
-                        style={{ width: `${item.porcentaje}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <NoDataMessage />
           </CardContent>
         </Card>
 
@@ -128,37 +89,7 @@ export default function NominaPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {[
-                { empleado: 'María González', tipo: 'Vacaciones', fecha: '2024-02-15', estado: 'Pendiente' },
-                { empleado: 'Juan Pérez', tipo: 'Permiso Médico', fecha: '2024-01-20', estado: 'Aprobado' },
-                { empleado: 'Ana López', tipo: 'Vacaciones', fecha: '2024-03-10', estado: 'Pendiente' },
-                { empleado: 'Carlos Ruiz', tipo: 'Permiso Personal', fecha: '2024-01-25', estado: 'Rechazado' },
-                { empleado: 'Laura Torres', tipo: 'Vacaciones', fecha: '2024-02-28', estado: 'Pendiente' }
-              ].map((item, index) => (
-                <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                      item.estado === 'Aprobado' ? 'bg-green-100' : 
-                      item.estado === 'Rechazado' ? 'bg-red-100' : 'bg-yellow-100'
-                    }`}>
-                      <Calendar className={`w-4 h-4 ${
-                        item.estado === 'Aprobado' ? 'text-green-600' : 
-                        item.estado === 'Rechazado' ? 'text-red-600' : 'text-yellow-600'
-                      }`} />
-                    </div>
-                    <div>
-                      <p className="font-medium">{item.empleado}</p>
-                      <p className="text-sm text-gray-500">{item.tipo} • {item.fecha}</p>
-                    </div>
-                  </div>
-                  <Badge variant={item.estado === 'Aprobado' ? 'default' : 
-                                item.estado === 'Rechazado' ? 'destructive' : 'secondary'}>
-                    {item.estado}
-                  </Badge>
-                </div>
-              ))}
-            </div>
+            <NoDataMessage />
           </CardContent>
         </Card>
       </div>
@@ -192,6 +123,15 @@ export default function NominaPage() {
           </div>
         </CardContent>
       </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>Formulario del módulo</CardTitle>
+          <CardDescription>Registro y parametrización</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <SubmoduleFormPage href="/nomina" embedded />
+        </CardContent>
+      </Card>
     </div>
   );
-} 
+}

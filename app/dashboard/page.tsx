@@ -5,7 +5,8 @@ import {
   PatientsByMonthChart,
   RecentPatients,
 } from '@/components/modules/dashboard';
-import { ModulePageLayout, ModuleCard } from '@/components/shared/module-page-layout';
+import { ModulePageLayout, ModuleCard } from '@/components/shared/module-page-layout'
+import { SubmoduleFormPage } from '@/components/shared/submodule-form-page';
 import { MetricCard } from '@/components/design-system';
 import { authOptions } from '@/lib/auth';
 import { getTenantPrisma } from '@/lib/tenant-prisma';
@@ -73,31 +74,21 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-gutter-md md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-gutter-md md:grid-cols-2 xl:grid-cols-3">
         <MetricCard
           label="Pacientes activos"
           value={dashboardStats.totalPatients ?? 0}
           icon="group"
-          trend="12%"
-          trendUp
         />
         <MetricCard
           label="Historias clínicas"
           value={dashboardStats.totalMedicalRecords ?? 0}
           icon="clinical_notes"
-          meta="Registros"
         />
         <MetricCard
           label="Usuarios del sistema"
           value={dashboardStats.totalUsers ?? 0}
           icon="manage_accounts"
-          meta="Activos"
-        />
-        <MetricCard
-          label="Camas disponibles"
-          value="42"
-          icon="bed"
-          meta="Capacidad: 450"
         />
       </div>
 
@@ -125,6 +116,9 @@ export default async function DashboardPage() {
           Usa el menú lateral para abrir cada módulo y sus formularios.
         </p>
       </div>
+      <ModuleCard title="Formulario del módulo" description="Registro y parametrización">
+        <SubmoduleFormPage href="/dashboard" embedded />
+      </ModuleCard>
     </ModulePageLayout>
   );
 }

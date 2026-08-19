@@ -24,6 +24,7 @@ import {
   Eye,
   Printer
 } from 'lucide-react';
+import { NoDataMessage } from '@/components/shared/no-data-message';
 
 export default function ReportesPage() {
   const [tipoReporte, setTipoReporte] = useState('pacientes');
@@ -31,35 +32,29 @@ export default function ReportesPage() {
   const [fechaInicio, setFechaInicio] = useState('');
   const [fechaFin, setFechaFin] = useState('');
 
-  // Datos de ejemplo para los reportes
-  const [reportes, setReportes] = useState({
-    pacientes: [
-      { id: 1, nombre: 'Reporte de Pacientes por Edad', descripcion: 'Distribución de pacientes por grupos de edad', tipo: 'PDF', fecha: '2024-01-15', estado: 'completado' },
-      { id: 2, nombre: 'Pacientes Nuevos Mensual', descripcion: 'Registro de pacientes nuevos por mes', tipo: 'Excel', fecha: '2024-01-14', estado: 'completado' },
-      { id: 3, nombre: 'Pacientes por Género', descripcion: 'Estadísticas de pacientes por género', tipo: 'PDF', fecha: '2024-01-13', estado: 'pendiente' }
-    ],
-    consultas: [
-      { id: 4, nombre: 'Consultas por Especialidad', descripcion: 'Número de consultas por especialidad médica', tipo: 'Excel', fecha: '2024-01-15', estado: 'completado' },
-      { id: 5, nombre: 'Tiempo Promedio de Consulta', descripcion: 'Análisis del tiempo promedio por consulta', tipo: 'PDF', fecha: '2024-01-14', estado: 'completado' },
-      { id: 6, nombre: 'Consultas por Médico', descripcion: 'Rendimiento de consultas por médico', tipo: 'Excel', fecha: '2024-01-12', estado: 'pendiente' }
-    ],
-    financiero: [
-      { id: 7, nombre: 'Ingresos Mensuales', descripcion: 'Reporte detallado de ingresos mensuales', tipo: 'PDF', fecha: '2024-01-15', estado: 'completado' },
-      { id: 8, nombre: 'Gastos por Departamento', descripcion: 'Análisis de gastos por departamento', tipo: 'Excel', fecha: '2024-01-14', estado: 'completado' },
-      { id: 9, nombre: 'Margen de Utilidad', descripcion: 'Análisis del margen de utilidad por servicio', tipo: 'PDF', fecha: '2024-01-13', estado: 'pendiente' }
-    ],
-    operativo: [
-      { id: 10, nombre: 'Ocupación de Camas', descripcion: 'Reporte de ocupación hospitalaria', tipo: 'Excel', fecha: '2024-01-15', estado: 'completado' },
-      { id: 11, nombre: 'Tiempo de Espera', descripcion: 'Análisis de tiempos de espera por servicio', tipo: 'PDF', fecha: '2024-01-14', estado: 'completado' },
-      { id: 12, nombre: 'Eficiencia Operativa', descripcion: 'Métricas de eficiencia operativa', tipo: 'Excel', fecha: '2024-01-12', estado: 'pendiente' }
-    ]
+  // Catálogo de reportes (vacío hasta integración con BD)
+  const [reportes] = useState<{
+    pacientes: Array<Record<string, string | number>>;
+    consultas: Array<Record<string, string | number>>;
+    financiero: Array<Record<string, string | number>>;
+    operativo: Array<Record<string, string | number>>;
+  }>({
+    pacientes: [],
+    consultas: [],
+    financiero: [],
+    operativo: [],
   });
 
-  const [reportesGenerados, setReportesGenerados] = useState([
-    { id: 1, nombre: 'Reporte Mensual Enero 2024', tipo: 'PDF', tamaño: '2.3 MB', fecha: '2024-01-15 14:30', descargas: 12 },
-    { id: 2, nombre: 'Estadísticas Q4 2023', tipo: 'Excel', tamaño: '1.8 MB', fecha: '2024-01-10 09:15', descargas: 8 },
-    { id: 3, nombre: 'Análisis Financiero Anual', tipo: 'PDF', tamaño: '4.1 MB', fecha: '2024-01-05 16:45', descargas: 15 }
-  ]);
+  const [reportesGenerados] = useState<
+    Array<{
+      id: number;
+      nombre: string;
+      tipo: string;
+      tamaño: string;
+      fecha: string;
+      descargas: number;
+    }>
+  >([]);
 
   const handleGenerarReporte = () => {
     // Simular generación de reporte
@@ -189,7 +184,10 @@ export default function ReportesPage() {
               description="Reportes relacionados con la gestión de pacientes"
             >
               <div className="space-y-3">
-                {reportes.pacientes.map((reporte) => (
+                {reportes.pacientes.length === 0 ? (
+                  <NoDataMessage />
+                ) : (
+                  reportes.pacientes.map((reporte) => (
                   <div key={reporte.id} className="flex items-center justify-between p-3 border rounded-lg">
                     <div className="flex items-center space-x-3">
                       {getTipoIcon(reporte.tipo)}
@@ -205,7 +203,8 @@ export default function ReportesPage() {
                       </Button>
                     </div>
                   </div>
-                ))}
+                ))
+                )}
               </div>
             </ModuleCard>
 
@@ -214,7 +213,10 @@ export default function ReportesPage() {
               description="Reportes sobre actividad médica y consultas"
             >
               <div className="space-y-3">
-                {reportes.consultas.map((reporte) => (
+                {reportes.consultas.length === 0 ? (
+                  <NoDataMessage />
+                ) : (
+                  reportes.consultas.map((reporte) => (
                   <div key={reporte.id} className="flex items-center justify-between p-3 border rounded-lg">
                     <div className="flex items-center space-x-3">
                       {getTipoIcon(reporte.tipo)}
@@ -230,7 +232,8 @@ export default function ReportesPage() {
                       </Button>
                     </div>
                   </div>
-                ))}
+                ))
+                )}
               </div>
             </ModuleCard>
 
@@ -239,7 +242,10 @@ export default function ReportesPage() {
               description="Reportes sobre ingresos, gastos y rentabilidad"
             >
               <div className="space-y-3">
-                {reportes.financiero.map((reporte) => (
+                {reportes.financiero.length === 0 ? (
+                  <NoDataMessage />
+                ) : (
+                  reportes.financiero.map((reporte) => (
                   <div key={reporte.id} className="flex items-center justify-between p-3 border rounded-lg">
                     <div className="flex items-center space-x-3">
                       {getTipoIcon(reporte.tipo)}
@@ -255,7 +261,8 @@ export default function ReportesPage() {
                       </Button>
                     </div>
                   </div>
-                ))}
+                ))
+                )}
               </div>
             </ModuleCard>
 
@@ -264,7 +271,10 @@ export default function ReportesPage() {
               description="Reportes sobre eficiencia y operaciones"
             >
               <div className="space-y-3">
-                {reportes.operativo.map((reporte) => (
+                {reportes.operativo.length === 0 ? (
+                  <NoDataMessage />
+                ) : (
+                  reportes.operativo.map((reporte) => (
                   <div key={reporte.id} className="flex items-center justify-between p-3 border rounded-lg">
                     <div className="flex items-center space-x-3">
                       {getTipoIcon(reporte.tipo)}
@@ -280,7 +290,8 @@ export default function ReportesPage() {
                       </Button>
                     </div>
                   </div>
-                ))}
+                ))
+                )}
               </div>
             </ModuleCard>
           </div>
@@ -292,7 +303,10 @@ export default function ReportesPage() {
             description="Reportes generados anteriormente"
           >
             <div className="space-y-4">
-              {reportesGenerados.map((reporte) => (
+              {reportesGenerados.length === 0 ? (
+                <NoDataMessage title="No hay reportes generados" />
+              ) : (
+                reportesGenerados.map((reporte) => (
                 <div key={reporte.id} className="flex items-center justify-between p-4 border rounded-lg">
                   <div className="flex items-center space-x-4">
                     {getTipoIcon(reporte.tipo)}
@@ -313,7 +327,8 @@ export default function ReportesPage() {
                     </Button>
                   </div>
                 </div>
-              ))}
+              ))
+              )}
             </div>
           </ModuleCard>
         </TabsContent>

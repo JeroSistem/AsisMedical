@@ -2,7 +2,10 @@
 FROM node:20-alpine AS deps
 WORKDIR /app
 RUN apk add --no-cache libc6-compat openssl
+ENV DATABASE_URL="mysql://build:build@127.0.0.1:3306/build"
 COPY package.json package-lock.json ./
+COPY prisma ./prisma
+COPY prisma.config.ts ./prisma.config.ts
 RUN npm ci
 
 FROM node:20-alpine AS builder

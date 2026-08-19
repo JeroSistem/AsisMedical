@@ -1,6 +1,7 @@
 'use client';
 
-import { ModulePageLayout } from '@/components/shared/module-page-layout';
+import { ModulePageLayout, ModuleCard } from '@/components/shared/module-page-layout'
+import { SubmoduleFormPage } from '@/components/shared/submodule-form-page';
 import { PrincipalUsersPanel } from '@/components/modules/plataforma/principal-users-panel';
 import { useSession } from 'next-auth/react';
 import { Card, CardContent } from '@/components/ui/card';
@@ -47,6 +48,9 @@ export default function UsuariosPrincipalesPage() {
       description="Crea y gestiona el usuario principal de cada entidad con la que contratas"
     >
       <PrincipalUsersPanel />
+      <ModuleCard title="Formulario del módulo" description="Registro y parametrización">
+        <SubmoduleFormPage href="/plataforma/usuarios-principales" embedded />
+      </ModuleCard>
     </ModulePageLayout>
   );
 }

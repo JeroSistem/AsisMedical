@@ -1,6 +1,7 @@
 'use client';
 
-import { ModulePageLayout, ModuleCard } from '@/components/shared/module-page-layout';
+import { ModulePageLayout, ModuleCard } from '@/components/shared/module-page-layout'
+import { SubmoduleFormPage } from '@/components/shared/submodule-form-page';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -61,6 +62,9 @@ export default function HistoriasPage() {
             </div>
           </TabsContent>
         </Tabs>
+      </ModuleCard>
+      <ModuleCard title="Formulario del módulo" description="Registro y parametrización">
+        <SubmoduleFormPage href="/historias" embedded />
       </ModuleCard>
     </ModulePageLayout>
   );

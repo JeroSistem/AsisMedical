@@ -63,23 +63,8 @@ export default function EventosAdversosPage() {
     eventosUlcerasMedicamentosHospitalizacion: '',
   });
 
-  // Datos de ejemplo para el listado
-  const mockEventos: EventoAdverso[] = [
-    {
-      fecha: '15/01/2024',
-      datos: {
-        caidasHospitalizacion: 2,
-        caidasConsultaExterna: 1,
-        caidasUrgencias: 0,
-        caidasApoyoDiagnostico: 0,
-        caidasEventoAdverso: 1,
-        caidasIncidentes: 2,
-        eventosMedicamentosHospitalizacion: 3,
-        eventosMedicamentosUrgencias: 1,
-        eventosUlcerasMedicamentosHospitalizacion: 0,
-      }
-    },
-  ];
+  // Datos del listado (vacío hasta integración con BD)
+  const mockEventos: EventoAdverso[] = [];
 
   // Filtrar eventos
   const filteredEventos = mockEventos.filter(evento =>
@@ -548,7 +533,7 @@ export default function EventosAdversosPage() {
                   ) : (
                     <tr>
                       <td colSpan={3} className="p-8 text-center text-gray-500">
-                        No data available in table
+                        No hay eventos adversos registrados
                       </td>
                     </tr>
                   )}

@@ -33,43 +33,8 @@ export function PatientSelectionNoToast() {
   const [urgencyFilter, setUrgencyFilter] = useState<string>('TODOS');
   const [isLoading, setIsLoading] = useState(false);
 
-  // Datos de ejemplo
-  const mockPatients: AdmittedPatient[] = [
-    {
-      id: '1',
-      name: 'María González',
-      documentNumber: '12345678',
-      age: 45,
-      gender: 'F',
-      admissionTime: '10:30 AM',
-      urgencyLevel: 'ALTA',
-      status: 'ADMITIDO',
-      triageCategory: 'Rojo',
-      vitalSigns: {
-        bloodPressure: '150/90',
-        heartRate: 95,
-        temperature: 38.2,
-        oxygenSaturation: 92
-      }
-    },
-    {
-      id: '2',
-      name: 'Carlos Rodríguez',
-      documentNumber: '87654321',
-      age: 32,
-      gender: 'M',
-      admissionTime: '11:15 AM',
-      urgencyLevel: 'MEDIA',
-      status: 'ADMITIDO',
-      triageCategory: 'Amarillo',
-      vitalSigns: {
-        bloodPressure: '130/85',
-        heartRate: 80,
-        temperature: 37.1,
-        oxygenSaturation: 98
-      }
-    }
-  ];
+  // Sin datos hasta integración con API
+  const mockPatients: AdmittedPatient[] = [];
 
   useEffect(() => {
     setPatients(mockPatients);

@@ -18,7 +18,10 @@ import {
   updateInstitutionEmployee,
 } from '@/lib/actions/entity-employees';
 import { getMyInstitution } from '@/lib/actions/my-institution';
-import { listAccessProfiles } from '@/lib/actions/access-profiles';
+import {
+  ensureDefaultAccessProfilesForCurrentInstitution,
+  listAccessProfiles,
+} from '@/lib/actions/access-profiles';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Table,
@@ -106,6 +109,7 @@ export default function UsersPage() {
   const [institutionLabel, setInstitutionLabel] = useState('');
   const [profiles, setProfiles] = useState<AccessProfileOption[]>([]);
   const [loadingProfiles, setLoadingProfiles] = useState(true);
+  const [creatingProfile, setCreatingProfile] = useState(false);
   const [employees, setEmployees] = useState<EmployeeRow[]>([]);
   const [loadingEmployees, setLoadingEmployees] = useState(false);
   const [formData, setFormData] = useState<UserFormData>({
@@ -192,6 +196,13 @@ export default function UsersPage() {
           (p) => String(p.status).toLowerCase() === 'active'
         );
         setProfiles(active);
+        if (active.length > 0) {
+          setFormData((prev) =>
+            prev.accessProfileId
+              ? prev
+              : { ...prev, accessProfileId: active[0].id }
+          );
+        }
       } else if (profilesRes.error) {
         toast.error(profilesRes.error);
       }
@@ -796,10 +807,45 @@ export default function UsersPage() {
                 .
               </p>
               {!loadingProfiles && profiles.length === 0 ? (
-                <p className="text-sm text-amber-700">
-                  Debe crear al menos un perfil activo antes de registrar usuarios del
-                  sistema.
-                </p>
+                <div className="space-y-2">
+                  <p className="text-sm text-amber-700">
+                    Debe haber al menos un perfil activo para registrar usuarios.
+                  </p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={creatingProfile}
+                    onClick={async () => {
+                      setCreatingProfile(true);
+                      try {
+                        const res =
+                          await ensureDefaultAccessProfilesForCurrentInstitution();
+                        if (!res.success) {
+                          toast.error(
+                            res.error || 'No se pudo crear el perfil Administrador'
+                          );
+                          return;
+                        }
+                        const profilesRes = await listAccessProfiles();
+                        const active = (profilesRes.data || []).filter(
+                          (p) => String(p.status).toLowerCase() === 'active'
+                        );
+                        setProfiles(active);
+                        if (active[0]) {
+                          setFormData((prev) => ({
+                            ...prev,
+                            accessProfileId: active[0].id,
+                          }));
+                        }
+                        toast.success('Perfil Administrador creado. Ya puede guardar el usuario.');
+                      } finally {
+                        setCreatingProfile(false);
+                      }
+                    }}
+                  >
+                    {creatingProfile ? 'Creando…' : 'Crear perfil Administrador'}
+                  </Button>
+                </div>
               ) : null}
             </div>
           </CardContent>

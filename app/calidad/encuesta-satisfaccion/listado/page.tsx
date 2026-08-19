@@ -30,24 +30,8 @@ interface Encuesta {
   centroServicios: string;
 }
 
-// Datos de ejemplo
-const mockEncuestas: Encuesta[] = [
-  {
-    id: 1,
-    fecha: '15/01/2024',
-    centroServicios: 'Centro Médico Principal'
-  },
-  {
-    id: 2,
-    fecha: '16/01/2024',
-    centroServicios: 'Centro Médico Norte'
-  },
-  {
-    id: 3,
-    fecha: '17/01/2024',
-    centroServicios: 'Centro Médico Sur'
-  },
-];
+// Sin datos hasta integración con BD
+const mockEncuestas: Encuesta[] = [];
 
 export default function ListadoEncuestaSatisfaccionPage() {
   const { toast } = useToast();

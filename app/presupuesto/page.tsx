@@ -1,8 +1,10 @@
 'use client';
 
+import { SubmoduleFormPage } from '@/components/shared/submodule-form-page';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { EmptyStatBlock, NoDataMessage } from '@/components/shared/no-data-message';
 import { BarChart3, Target, TrendingUp, DollarSign, FileText } from 'lucide-react';
 
 export default function PresupuestoPage() {
@@ -28,10 +30,7 @@ export default function PresupuestoPage() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">$2,450,000</div>
-            <p className="text-xs text-muted-foreground">
-              Año fiscal 2024
-            </p>
+            <EmptyStatBlock />
           </CardContent>
         </Card>
 
@@ -41,10 +40,7 @@ export default function PresupuestoPage() {
             <Target className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">$1,890,450</div>
-            <p className="text-xs text-muted-foreground">
-              77.2% del presupuesto
-            </p>
+            <EmptyStatBlock />
           </CardContent>
         </Card>
 
@@ -54,10 +50,7 @@ export default function PresupuestoPage() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">$559,550</div>
-            <p className="text-xs text-muted-foreground">
-              Restante para el año
-            </p>
+            <EmptyStatBlock />
           </CardContent>
         </Card>
 
@@ -67,10 +60,7 @@ export default function PresupuestoPage() {
             <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-600">$125,000</div>
-            <p className="text-xs text-muted-foreground">
-              Próximos 30 días
-            </p>
+            <EmptyStatBlock />
           </CardContent>
         </Card>
       </div>
@@ -86,40 +76,7 @@ export default function PresupuestoPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {[
-                { partida: 'Personal Médico', presupuesto: 850000, ejecutado: 720000, porcentaje: 84.7 },
-                { partida: 'Medicamentos', presupuesto: 450000, ejecutado: 380000, porcentaje: 84.4 },
-                { partida: 'Equipos Médicos', presupuesto: 320000, ejecutado: 280000, porcentaje: 87.5 },
-                { partida: 'Servicios Generales', presupuesto: 280000, ejecutado: 220000, porcentaje: 78.6 },
-                { partida: 'Mantenimiento', presupuesto: 150000, ejecutado: 110450, porcentaje: 73.6 }
-              ].map((item, index) => (
-                <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                      item.porcentaje >= 80 ? 'bg-green-100' : 
-                      item.porcentaje >= 60 ? 'bg-yellow-100' : 'bg-red-100'
-                    }`}>
-                      <BarChart3 className={`w-4 h-4 ${
-                        item.porcentaje >= 80 ? 'text-green-600' : 
-                        item.porcentaje >= 60 ? 'text-yellow-600' : 'text-red-600'
-                      }`} />
-                    </div>
-                    <div>
-                      <p className="font-medium">{item.partida}</p>
-                      <p className="text-sm text-gray-500">Presupuesto: ${item.presupuesto.toLocaleString()}</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-medium">${item.ejecutado.toLocaleString()}</p>
-                    <Badge variant={item.porcentaje >= 80 ? 'default' : 
-                                  item.porcentaje >= 60 ? 'secondary' : 'destructive'}>
-                      {item.porcentaje}%
-                    </Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <NoDataMessage />
           </CardContent>
         </Card>
 
@@ -132,37 +89,7 @@ export default function PresupuestoPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {[
-                { proyecto: 'Nuevo Equipo de Resonancia', presupuesto: 450000, ejecutado: 320000, estado: 'En Progreso' },
-                { proyecto: 'Ampliación de Emergencias', presupuesto: 280000, ejecutado: 280000, estado: 'Completado' },
-                { proyecto: 'Sistema de Información', presupuesto: 180000, ejecutado: 150000, estado: 'En Progreso' },
-                { proyecto: 'Renovación de Laboratorio', presupuesto: 220000, ejecutado: 180000, estado: 'En Progreso' },
-                { proyecto: 'Equipos de Monitoreo', presupuesto: 120000, ejecutado: 95000, estado: 'En Progreso' }
-              ].map((item, index) => (
-                <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                      item.estado === 'Completado' ? 'bg-green-100' : 'bg-blue-100'
-                    }`}>
-                      <Target className={`w-4 h-4 ${
-                        item.estado === 'Completado' ? 'text-green-600' : 'text-blue-600'
-                      }`} />
-                    </div>
-                    <div>
-                      <p className="font-medium">{item.proyecto}</p>
-                      <p className="text-sm text-gray-500">Presupuesto: ${item.presupuesto.toLocaleString()}</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-medium">${item.ejecutado.toLocaleString()}</p>
-                    <Badge variant={item.estado === 'Completado' ? 'default' : 'secondary'}>
-                      {item.estado}
-                    </Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <NoDataMessage />
           </CardContent>
         </Card>
       </div>
@@ -196,6 +123,15 @@ export default function PresupuestoPage() {
           </div>
         </CardContent>
       </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>Formulario del módulo</CardTitle>
+          <CardDescription>Registro y parametrización</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <SubmoduleFormPage href="/presupuesto" embedded />
+        </CardContent>
+      </Card>
     </div>
   );
-} 
+}

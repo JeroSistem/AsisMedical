@@ -1,8 +1,9 @@
 'use client';
 
+import { SubmoduleFormPage } from '@/components/shared/submodule-form-page';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { EmptyStatBlock, NoDataMessage } from '@/components/shared/no-data-message';
 import { Calendar, Users, Activity, Clock } from 'lucide-react';
 
 export default function AsistencialPage() {
@@ -28,10 +29,7 @@ export default function AsistencialPage() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">1,234</div>
-            <p className="text-xs text-muted-foreground">
-              +20.1% desde el mes pasado
-            </p>
+            <EmptyStatBlock />
           </CardContent>
         </Card>
 
@@ -41,10 +39,7 @@ export default function AsistencialPage() {
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">45</div>
-            <p className="text-xs text-muted-foreground">
-              Pacientes activos
-            </p>
+            <EmptyStatBlock />
           </CardContent>
         </Card>
 
@@ -54,10 +49,7 @@ export default function AsistencialPage() {
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">25 min</div>
-            <p className="text-xs text-muted-foreground">
-              Tiempo de atención
-            </p>
+            <EmptyStatBlock />
           </CardContent>
         </Card>
 
@@ -67,10 +59,7 @@ export default function AsistencialPage() {
             <Calendar className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">89</div>
-            <p className="text-xs text-muted-foreground">
-              Programadas para hoy
-            </p>
+            <EmptyStatBlock />
           </CardContent>
         </Card>
       </div>
@@ -86,22 +75,10 @@ export default function AsistencialPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {[1, 2, 3, 4, 5].map((item) => (
-                <div key={item} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-teal-100 rounded-full flex items-center justify-center">
-                      <Users className="w-4 h-4 text-teal-600" />
-                    </div>
-                    <div>
-                      <p className="font-medium">Paciente {item}</p>
-                      <p className="text-sm text-gray-500">Consulta general</p>
-                    </div>
-                  </div>
-                  <Badge variant="secondary">Completada</Badge>
-                </div>
-              ))}
-            </div>
+            <NoDataMessage
+              title="Sin atenciones recientes"
+              description="Las atenciones registradas aparecerán aquí."
+            />
           </CardContent>
         </Card>
 
@@ -114,22 +91,10 @@ export default function AsistencialPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {[1, 2, 3, 4, 5].map((item) => (
-                <div key={item} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                      <Calendar className="w-4 h-4 text-blue-600" />
-                    </div>
-                    <div>
-                      <p className="font-medium">Cita {item}</p>
-                      <p className="text-sm text-gray-500">09:00 AM</p>
-                    </div>
-                  </div>
-                  <Badge variant="outline">Pendiente</Badge>
-                </div>
-              ))}
-            </div>
+            <NoDataMessage
+              title="Sin atenciones programadas"
+              description="Las atenciones agendadas aparecerán aquí."
+            />
           </CardContent>
         </Card>
       </div>
@@ -163,6 +128,15 @@ export default function AsistencialPage() {
           </div>
         </CardContent>
       </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>Formulario del módulo</CardTitle>
+          <CardDescription>Registro y parametrización</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <SubmoduleFormPage href="/asistencial" embedded />
+        </CardContent>
+      </Card>
     </div>
   );
-} 
+}

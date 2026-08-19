@@ -1,6 +1,7 @@
 'use client';
 
-import { ModulePageLayout, ModuleCard } from '@/components/shared/module-page-layout';
+import { ModulePageLayout, ModuleCard } from '@/components/shared/module-page-layout'
+import { SubmoduleFormPage } from '@/components/shared/submodule-form-page';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -20,6 +21,7 @@ import {
   UserX
 } from 'lucide-react';
 import Link from 'next/link';
+import { EmptyStatBlock, NoDataMessage } from '@/components/shared/no-data-message';
 
 export default function CitasPage() {
   const gestionItems = [
@@ -124,7 +126,7 @@ export default function CitasPage() {
               <CalendarDays className="h-8 w-8 text-blue-600" />
               <div>
                 <p className="text-sm text-gray-600">Citas Hoy</p>
-                <p className="text-2xl font-bold">24</p>
+                <EmptyStatBlock subtitle="Sin datos" />
               </div>
             </div>
           </CardContent>
@@ -135,7 +137,7 @@ export default function CitasPage() {
               <UserCheck className="h-8 w-8 text-green-600" />
               <div>
                 <p className="text-sm text-gray-600">Asistieron</p>
-                <p className="text-2xl font-bold">18</p>
+                <EmptyStatBlock subtitle="Sin datos" />
               </div>
             </div>
           </CardContent>
@@ -146,7 +148,7 @@ export default function CitasPage() {
               <UserX className="h-8 w-8 text-red-600" />
               <div>
                 <p className="text-sm text-gray-600">Inasistentes</p>
-                <p className="text-2xl font-bold">3</p>
+                <EmptyStatBlock subtitle="Sin datos" />
               </div>
             </div>
           </CardContent>
@@ -157,7 +159,7 @@ export default function CitasPage() {
               <X className="h-8 w-8 text-orange-600" />
               <div>
                 <p className="text-sm text-gray-600">Canceladas</p>
-                <p className="text-2xl font-bold">3</p>
+                <EmptyStatBlock subtitle="Sin datos" />
               </div>
             </div>
           </CardContent>
@@ -176,33 +178,10 @@ export default function CitasPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
-            {[
-              { time: '09:00', patient: 'Juan Pérez', doctor: 'Dr. García', status: 'confirmada' },
-              { time: '10:30', patient: 'María López', doctor: 'Dr. Rodríguez', status: 'pendiente' },
-              { time: '14:00', patient: 'Carlos Ruiz', doctor: 'Dr. Martínez', status: 'confirmada' },
-              { time: '16:30', patient: 'Ana Silva', doctor: 'Dr. González', status: 'pendiente' },
-            ].map((cita, index) => (
-              <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                <div className="flex items-center gap-4">
-                  <div className="text-center">
-                    <p className="text-sm font-medium text-gray-900">{cita.time}</p>
-                    <p className="text-xs text-gray-500">Hora</p>
-                  </div>
-                  <div>
-                    <p className="font-medium text-gray-900">{cita.patient}</p>
-                    <p className="text-sm text-gray-600">{cita.doctor}</p>
-                  </div>
-                </div>
-                <Badge 
-                  variant={cita.status === 'confirmada' ? 'default' : 'secondary'}
-                  className={cita.status === 'confirmada' ? 'bg-green-100 text-green-800' : ''}
-                >
-                  {cita.status === 'confirmada' ? 'Confirmada' : 'Pendiente'}
-                </Badge>
-              </div>
-            ))}
-          </div>
+          <NoDataMessage
+            title="Sin citas programadas"
+            description="Las citas de hoy y mañana aparecerán aquí."
+          />
         </CardContent>
       </Card>
 
@@ -213,6 +192,9 @@ export default function CitasPage() {
           Generar Reporte
         </Button>
       </div>
+      <ModuleCard title="Formulario del módulo" description="Registro y parametrización">
+        <SubmoduleFormPage href="/citas" embedded />
+      </ModuleCard>
     </ModulePageLayout>
   );
-} 
+}

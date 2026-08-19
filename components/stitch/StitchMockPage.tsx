@@ -6,14 +6,7 @@ import { ModulePageLayout } from '@/components/shared/module-page-layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { NoDataMessage } from '@/components/shared/no-data-message';
 import { MetricCard, StatusPill } from '@/components/design-system';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -146,9 +139,9 @@ export function StitchMockPage({
                 <MetricCard
                   key={item.label}
                   label={item.label}
-                  value={item.value}
+                  value="0"
                   icon={item.icon}
-                  meta={item.meta}
+                  meta="Sin datos registrados"
                 />
               ))}
             </div>
@@ -161,24 +154,7 @@ export function StitchMockPage({
               <div className="border-b border-slate-100 px-4 py-3">
                 <h3 className="font-geist text-title-lg text-[#191c1e]">{section.title}</h3>
               </div>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    {section.columns.map((col) => (
-                      <TableHead key={col}>{col}</TableHead>
-                    ))}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {section.rows.map((row, rIdx) => (
-                    <TableRow key={rIdx}>
-                      {row.map((cell, cIdx) => (
-                        <TableCell key={cIdx}>{cell}</TableCell>
-                      ))}
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              <NoDataMessage className="py-8" />
             </div>
           );
         }

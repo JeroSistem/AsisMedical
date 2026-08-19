@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { ModulePageLayout } from '@/components/shared/module-page-layout';
+import { ModulePageLayout, ModuleCard } from '@/components/shared/module-page-layout'
+import { SubmoduleFormPage } from '@/components/shared/submodule-form-page';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -32,6 +33,7 @@ import {
 export default function EstadisticasPage() {
   const [periodo, setPeriodo] = useState('30');
   const [isLoading, setIsLoading] = useState(true);
+  const [hasMounted, setHasMounted] = useState(false);
 
   // Estadísticas del sistema - inicialmente en 0
   const [stats, setStats] = useState({
@@ -87,8 +89,24 @@ export default function EstadisticasPage() {
   };
 
   useEffect(() => {
+    setHasMounted(true);
     loadStats();
   }, []);
+
+  const formatNumber = (value: number) => {
+    if (!hasMounted) return String(value);
+    return value.toLocaleString('es-CO');
+  };
+
+  const formatUptime = (uptime: number) => {
+    if (!hasMounted || uptime <= 0) return '—';
+    return `${uptime}%`;
+  };
+
+  const formatPercent = (value: number) => {
+    if (!hasMounted || value <= 0) return '0%';
+    return `${value}%`;
+  };
 
   const handleRefresh = () => {
     loadStats();
@@ -178,17 +196,24 @@ export default function EstadisticasPage() {
               <Server className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.rendimiento.uptime}%</div>
-              <div className="flex items-center space-x-2 text-xs text-muted-foreground">
-                {getCrecimientoIcon(stats.rendimiento.crecimiento)}
-                <span className={getCrecimientoColor(stats.rendimiento.crecimiento)}>
-                  +{stats.rendimiento.crecimiento}%
-                </span>
-                <span>vs mes anterior</span>
-              </div>
-              <div className="text-xs text-muted-foreground mt-1">
-                Tiempo de respuesta: {stats.rendimiento.tiempoRespuesta}ms
-              </div>
+              <div className="text-2xl font-bold">{formatUptime(stats.rendimiento.uptime)}</div>
+              {hasMounted && stats.rendimiento.uptime > 0 && stats.rendimiento.crecimiento !== 0 && (
+                <div className="flex items-center space-x-2 text-xs text-muted-foreground">
+                  {getCrecimientoIcon(stats.rendimiento.crecimiento)}
+                  <span className={getCrecimientoColor(stats.rendimiento.crecimiento)}>
+                    +{stats.rendimiento.crecimiento}%
+                  </span>
+                  <span>vs mes anterior</span>
+                </div>
+              )}
+              {hasMounted && stats.rendimiento.uptime === 0 && (
+                <p className="text-xs text-muted-foreground mt-1">Sin monitoreo configurado</p>
+              )}
+              {hasMounted && stats.rendimiento.uptime > 0 && stats.rendimiento.tiempoRespuesta > 0 && (
+                <div className="text-xs text-muted-foreground mt-1">
+                  Tiempo de respuesta: {stats.rendimiento.tiempoRespuesta}ms
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -198,7 +223,7 @@ export default function EstadisticasPage() {
               <HardDrive className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.almacenamiento.porcentaje > 0 ? `${stats.almacenamiento.porcentaje}%` : '0%'}</div>
+              <div className="text-2xl font-bold">{formatPercent(stats.almacenamiento.porcentaje)}</div>
               {stats.almacenamiento.total > 0 && (
                 <div className="text-xs text-muted-foreground">
                   {stats.almacenamiento.usado} GB de {stats.almacenamiento.total} GB
@@ -222,11 +247,11 @@ export default function EstadisticasPage() {
               <CheckCircle className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.transacciones.tasa > 0 ? `${stats.transacciones.tasa}%` : '0%'}</div>
-              {stats.transacciones.total > 0 && (
+              <div className="text-2xl font-bold">{formatPercent(stats.transacciones.tasa)}</div>
+              {hasMounted && stats.transacciones.total > 0 && (
                 <>
                   <div className="text-xs text-muted-foreground">
-                    {stats.transacciones.exitosas.toLocaleString()} exitosas
+                    {formatNumber(stats.transacciones.exitosas)} exitosas
                   </div>
                   {stats.transacciones.fallidas > 0 && (
                     <div className="text-xs text-red-600 mt-1">
@@ -303,7 +328,7 @@ export default function EstadisticasPage() {
                         <div>
                           <div className="text-sm font-medium">{modulo.nombre}</div>
                           <div className="text-xs text-muted-foreground">
-                            {modulo.uso.toLocaleString()} accesos
+                            {formatNumber(modulo.uso)} accesos
                           </div>
                         </div>
                       </div>
@@ -388,15 +413,17 @@ export default function EstadisticasPage() {
                     <Globe className="w-4 h-4 text-blue-600" />
                     <span className="text-sm font-medium">Solicitudes procesadas</span>
                   </div>
-                  <Badge variant="outline">{stats.rendimiento.solicitudes.toLocaleString()}</Badge>
+                  <Badge variant="outline">{formatNumber(stats.rendimiento.solicitudes)}</Badge>
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
                     <Server className="w-4 h-4 text-green-600" />
                     <span className="text-sm font-medium">Disponibilidad</span>
                   </div>
-                  <Badge variant="outline" className="bg-green-50 text-green-700">
-                    {stats.rendimiento.uptime}%
+                  <Badge variant="outline" className={stats.rendimiento.uptime > 0 ? 'bg-green-50 text-green-700' : ''}>
+                    {formatUptime(stats.rendimiento.uptime) === '—'
+                      ? 'Sin monitoreo'
+                      : formatUptime(stats.rendimiento.uptime)}
                   </Badge>
                 </div>
               </div>
@@ -421,7 +448,7 @@ export default function EstadisticasPage() {
                     <span className="text-sm font-medium">Autenticaciones exitosas</span>
                   </div>
                   <Badge variant="outline" className="bg-green-50 text-green-700">
-                    {stats.transacciones.exitosas.toLocaleString()}
+                    {formatNumber(stats.transacciones.exitosas)}
                   </Badge>
                 </div>
                 <div className="flex items-center justify-between">
@@ -467,16 +494,19 @@ export default function EstadisticasPage() {
                 <div className="text-sm text-muted-foreground">Sesiones Activas</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-purple-600">{stats.transacciones.total.toLocaleString()}</div>
+                <div className="text-2xl font-bold text-purple-600">{formatNumber(stats.transacciones.total)}</div>
                 <div className="text-sm text-muted-foreground">Transacciones Totales</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-orange-600">{stats.rendimiento.solicitudes.toLocaleString()}</div>
+                <div className="text-2xl font-bold text-orange-600">{formatNumber(stats.rendimiento.solicitudes)}</div>
                 <div className="text-sm text-muted-foreground">Solicitudes Procesadas</div>
               </div>
             </div>
           </CardContent>
         </Card>
+      <ModuleCard title="Formulario del módulo" description="Registro y parametrización">
+        <SubmoduleFormPage href="/dashboard/estadisticas" embedded />
+      </ModuleCard>
     </ModulePageLayout>
   );
 }

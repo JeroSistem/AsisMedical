@@ -1,8 +1,10 @@
 'use client';
 
+import { SubmoduleFormPage } from '@/components/shared/submodule-form-page';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { EmptyStatBlock, NoDataMessage } from '@/components/shared/no-data-message';
 import { AlertTriangle, Database, CheckCircle, Clock } from 'lucide-react';
 
 export default function AnexoTecnicoInconsistenciaPage() {
@@ -28,8 +30,7 @@ export default function AnexoTecnicoInconsistenciaPage() {
             <AlertTriangle className="h-4 w-4 text-red-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">156</div>
-            <p className="text-xs text-muted-foreground">+12 este mes</p>
+            <EmptyStatBlock />
           </CardContent>
         </Card>
 
@@ -39,8 +40,7 @@ export default function AnexoTecnicoInconsistenciaPage() {
             <CheckCircle className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">134</div>
-            <p className="text-xs text-muted-foreground">86% resueltas</p>
+            <EmptyStatBlock />
           </CardContent>
         </Card>
 
@@ -50,8 +50,7 @@ export default function AnexoTecnicoInconsistenciaPage() {
             <Clock className="h-4 w-4 text-orange-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">22</div>
-            <p className="text-xs text-muted-foreground">Requieren atención</p>
+            <EmptyStatBlock />
           </CardContent>
         </Card>
 
@@ -61,8 +60,7 @@ export default function AnexoTecnicoInconsistenciaPage() {
             <Database className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">Estable</div>
-            <p className="text-xs text-muted-foreground">Estado actual</p>
+            <EmptyStatBlock />
           </CardContent>
         </Card>
       </div>
@@ -76,23 +74,7 @@ export default function AnexoTecnicoInconsistenciaPage() {
             <CardDescription>Últimas inconsistencias reportadas</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {[1, 2, 3, 4, 5].map((item) => (
-                <div key={item} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <AlertTriangle className="h-5 w-5 text-red-600" />
-                    <div>
-                      <p className="font-medium">Inconsistencia #{6000 + item}</p>
-                      <p className="text-sm text-gray-500">Tabla {item}</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm text-gray-500">2024-01-{item.toString().padStart(2, '0')}</p>
-                    <Badge variant="secondary">Pendiente</Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <NoDataMessage />
           </CardContent>
         </Card>
 
@@ -124,6 +106,15 @@ export default function AnexoTecnicoInconsistenciaPage() {
           </CardContent>
         </Card>
       </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Formulario del módulo</CardTitle>
+          <CardDescription>Registro y parametrización</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <SubmoduleFormPage href="/facturacion/administracion/anexo-inconsistencia" embedded />
+        </CardContent>
+      </Card>
     </div>
   );
-} 
+}

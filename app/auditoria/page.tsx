@@ -1,8 +1,9 @@
 'use client';
 
+import { SubmoduleFormPage } from '@/components/shared/submodule-form-page';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { EmptyStatBlock, NoDataMessage } from '@/components/shared/no-data-message';
 import { Search, AlertCircle, CheckCircle, Clock, FileText } from 'lucide-react';
 
 export default function AuditoriaPage() {
@@ -28,10 +29,7 @@ export default function AuditoriaPage() {
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-600">12</div>
-            <p className="text-xs text-muted-foreground">
-              Requieren revisión
-            </p>
+            <EmptyStatBlock />
           </CardContent>
         </Card>
 
@@ -41,10 +39,7 @@ export default function AuditoriaPage() {
             <CheckCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">89</div>
-            <p className="text-xs text-muted-foreground">
-              Este mes
-            </p>
+            <EmptyStatBlock />
           </CardContent>
         </Card>
 
@@ -54,10 +49,7 @@ export default function AuditoriaPage() {
             <AlertCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">3</div>
-            <p className="text-xs text-muted-foreground">
-              Requieren atención inmediata
-            </p>
+            <EmptyStatBlock />
           </CardContent>
         </Card>
 
@@ -67,10 +59,7 @@ export default function AuditoriaPage() {
             <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">45</div>
-            <p className="text-xs text-muted-foreground">
-              Reportes este mes
-            </p>
+            <EmptyStatBlock />
           </CardContent>
         </Card>
       </div>
@@ -86,37 +75,10 @@ export default function AuditoriaPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {[
-                { title: 'Auditoría de Historias Clínicas', area: 'Historias Clínicas', priority: 'Alta', date: '2024-01-20' },
-                { title: 'Auditoría de Medicamentos', area: 'Farmacia', priority: 'Media', date: '2024-01-19' },
-                { title: 'Auditoría de Procedimientos', area: 'Quirófano', priority: 'Alta', date: '2024-01-18' },
-                { title: 'Auditoría de Documentación', area: 'Admisión', priority: 'Baja', date: '2024-01-17' },
-                { title: 'Auditoría de Seguridad', area: 'General', priority: 'Alta', date: '2024-01-16' }
-              ].map((item, index) => (
-                <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                      item.priority === 'Alta' ? 'bg-red-100' : 
-                      item.priority === 'Media' ? 'bg-yellow-100' : 'bg-green-100'
-                    }`}>
-                      <Search className={`w-4 h-4 ${
-                        item.priority === 'Alta' ? 'text-red-600' : 
-                        item.priority === 'Media' ? 'text-yellow-600' : 'text-green-600'
-                      }`} />
-                    </div>
-                    <div>
-                      <p className="font-medium">{item.title}</p>
-                      <p className="text-sm text-gray-500">{item.area} • {item.date}</p>
-                    </div>
-                  </div>
-                  <Badge variant={item.priority === 'Alta' ? 'destructive' : 
-                                item.priority === 'Media' ? 'secondary' : 'outline'}>
-                    {item.priority}
-                  </Badge>
-                </div>
-              ))}
-            </div>
+            <NoDataMessage
+              title="Sin auditorías pendientes"
+              description="Las auditorías que requieran revisión aparecerán aquí."
+            />
           </CardContent>
         </Card>
 
@@ -129,37 +91,10 @@ export default function AuditoriaPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {[
-                { type: 'Crítico', description: 'Documentación incompleta en historias clínicas', area: 'Historias Clínicas' },
-                { type: 'Advertencia', description: 'Stock bajo en medicamentos críticos', area: 'Farmacia' },
-                { type: 'Crítico', description: 'Procedimientos sin consentimiento informado', area: 'Quirófano' },
-                { type: 'Info', description: 'Retraso en actualización de datos', area: 'Admisión' },
-                { type: 'Advertencia', description: 'Equipos sin mantenimiento preventivo', area: 'Equipos' }
-              ].map((item, index) => (
-                <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                      item.type === 'Crítico' ? 'bg-red-100' : 
-                      item.type === 'Advertencia' ? 'bg-yellow-100' : 'bg-blue-100'
-                    }`}>
-                      <AlertCircle className={`w-4 h-4 ${
-                        item.type === 'Crítico' ? 'text-red-600' : 
-                        item.type === 'Advertencia' ? 'text-yellow-600' : 'text-blue-600'
-                      }`} />
-                    </div>
-                    <div>
-                      <p className="font-medium">{item.description}</p>
-                      <p className="text-sm text-gray-500">{item.area}</p>
-                    </div>
-                  </div>
-                  <Badge variant={item.type === 'Crítico' ? 'destructive' : 
-                                item.type === 'Advertencia' ? 'secondary' : 'outline'}>
-                    {item.type}
-                  </Badge>
-                </div>
-              ))}
-            </div>
+            <NoDataMessage
+              title="Sin hallazgos registrados"
+              description="Los hallazgos de auditoría aparecerán aquí."
+            />
           </CardContent>
         </Card>
       </div>
@@ -193,6 +128,15 @@ export default function AuditoriaPage() {
           </div>
         </CardContent>
       </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>Formulario del módulo</CardTitle>
+          <CardDescription>Registro y parametrización</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <SubmoduleFormPage href="/auditoria" embedded />
+        </CardContent>
+      </Card>
     </div>
   );
-} 
+}

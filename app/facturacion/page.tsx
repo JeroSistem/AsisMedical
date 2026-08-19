@@ -1,6 +1,7 @@
 'use client';
 
-import { ModulePageLayout, ModuleCard } from '@/components/shared/module-page-layout';
+import { ModulePageLayout, ModuleCard } from '@/components/shared/module-page-layout'
+import { SubmoduleFormPage } from '@/components/shared/submodule-form-page';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -28,8 +29,9 @@ export default function FacturacionIndexPage() {
           </Link>
         ))}
       </div>
+      <ModuleCard title="Formulario del módulo" description="Registro y parametrización">
+        <SubmoduleFormPage href="/facturacion" embedded />
+      </ModuleCard>
     </ModulePageLayout>
   );
 }
-
-

@@ -53,6 +53,9 @@ CREDENTIALS.local.md
 # Documentación local (NO subir a GitHub)
 /documentacion/
 
+# Artefactos de scripts locales
+/scripts/missing-routes.json
+
 # firebase
 firebase-debug.log
 firestore-debug.log

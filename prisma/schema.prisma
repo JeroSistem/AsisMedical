@@ -592,6 +592,10 @@ model PartnerContract {
   penalties            String?   @db.Text
   requiredDocuments    String?   @map("required_documents") @db.Text
   observations         String?   @db.Text
+  description          String?   @db.Text
+  benefitPlan          String?   @map("benefit_plan")
+  medicationPriceList  String?   @map("medication_price_list")
+  formPayload          Json?     @map("form_payload")
   status               String    @default("activo")
   active               Boolean   @default(true)
   createdAt            DateTime  @default(now()) @map("created_at")
@@ -645,4 +649,24 @@ model AccessProfilePermission {
   @@index([profileId])
   @@index([moduleKey])
   @@map("access_profile_permissions")
+}
+
+/// Registros genéricos de formularios por submódulo (ruta de navegación)
+model ModuleFormRecord {
+  id            String   @id @default(cuid())
+  modulePath    String   @map("module_path") @db.VarChar(512)
+  mode          String   @default("crud") @db.VarChar(32)
+  codigo        String?  @db.VarChar(128)
+  nombre        String?  @db.VarChar(512)
+  estado        String?  @default("activo") @db.VarChar(64)
+  payload       Json
+  createdById   String?  @map("created_by_id")
+  createdByName String?  @map("created_by_name") @db.VarChar(255)
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  @@index([modulePath])
+  @@index([modulePath, createdAt])
+  @@index([codigo])
+  @@map("module_form_records")
 }
