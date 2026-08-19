@@ -1,6 +1,5 @@
-# Blueprint Render — la web NO hace `next build` (OOM en plan free).
-# La imagen se construye en GitHub Actions → ghcr.io/jerosistem/asismedical:latest
-# DATABASE_URL debe ser MySQL/MariaDB (ya no se usa Postgres de Render).
+# Blueprint Render — imagen desde GitHub Actions (ghcr.io/jerosistem/asismedical:latest)
+# DATABASE_URL: solo MySQL/MariaDB (mysql://...)
 
 services:
   - type: web

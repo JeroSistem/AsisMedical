@@ -14,6 +14,23 @@ export function mysqlConfigFromUrl(
   if (!connectionString) {
     throw new Error('DATABASE_URL no está definida');
   }
+
+  const lower = connectionString.toLowerCase();
+  if (
+    lower.startsWith('postgres://') ||
+    lower.startsWith('postgresql://') ||
+    lower.includes('postgres:')
+  ) {
+    throw new Error(
+      'DATABASE_URL apunta a PostgreSQL. Este proyecto solo usa MySQL/MariaDB (mysql://...).'
+    );
+  }
+  if (!lower.startsWith('mysql://')) {
+    throw new Error(
+      'DATABASE_URL debe usar el esquema mysql:// (MySQL 8.4 / MariaDB).'
+    );
+  }
+
   const url = new URL(connectionString);
   return {
     host: url.hostname,

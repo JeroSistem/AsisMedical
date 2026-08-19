@@ -125,7 +125,11 @@ lib/
 
 ## 🗄️ Persistencia
 
-La aplicación usa **MySQL 8.4** con Prisma. Configura `DATABASE_URL` en `.env.local` (ver `env.example`).
+La aplicación usa **solo MySQL 8.4** (multi-tenant). No hay conexión ni soporte para PostgreSQL.
+
+- ORM: **Prisma 7** con adaptador `@prisma/adapter-mariadb`
+- Configura `DATABASE_URL` en `.env.local` con formato `mysql://usuario:clave@host:3306/asis_medical`
+- Plantillas: `env.example` y `env.local.example`
 
 ## 🚨 Seguridad
 
